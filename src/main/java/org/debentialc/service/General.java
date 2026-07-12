@@ -97,6 +97,9 @@ public class General {
     public static int getSTAT(String stat, Player entity) {
         return JRMCoreH.getInt(toPlayerMP(entity), STATS_MAP.get(stat.toUpperCase()));
     }
+    public static void setSTAT(String stat, Player entity, int value) {
+        JRMCoreH.setInt(value, toPlayerMP(entity), STATS_MAP.get(stat.toUpperCase()));
+    }
 
     public static EntityPlayerMP toPlayerMP(Player player) {
         return (EntityPlayerMP) NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer().getMCEntity();
@@ -112,12 +115,12 @@ public class General {
     }
 
     public static int getLVL(Player player) {
-        int str = JRMCoreH.getInt(toPlayerMP(player), STR);
-        int dex = JRMCoreH.getInt(toPlayerMP(player), DEX);
-        int con = JRMCoreH.getInt(toPlayerMP(player), CON);
-        int wil = JRMCoreH.getInt(toPlayerMP(player), WIL);
-        int mnd = JRMCoreH.getInt(toPlayerMP(player), MND);
-        int spi = JRMCoreH.getInt(toPlayerMP(player), SPI);
+        int str = JRMCoreH.getInt(toPlayerMP(player), STR2);
+        int dex = JRMCoreH.getInt(toPlayerMP(player), DEX2);
+        int con = JRMCoreH.getInt(toPlayerMP(player), CON2);
+        int wil = JRMCoreH.getInt(toPlayerMP(player), WIL2);
+        int mnd = JRMCoreH.getInt(toPlayerMP(player), MND2);
+        int spi = JRMCoreH.getInt(toPlayerMP(player), SPI2);
         int lvl = (str + dex + con + wil + mnd + spi) / 5 - 11;
         return lvl;
     }

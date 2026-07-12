@@ -15,6 +15,8 @@ import org.debentialc.boosters.managers.GlobalBoosterManager;
 import org.debentialc.boosters.managers.PersonalBoosterManager;
 import org.debentialc.service.CC;
 
+import java.util.Locale;
+
 public class GiveTpsCommandInterceptor implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -84,10 +86,7 @@ public class GiveTpsCommandInterceptor implements Listener {
     }
 
     public static void sendSuccessMessage(CommandSender sender, Player target, int baseTPs, int bonusTPs, int totalTPs,
-                                    double globalMult, double personalMult, double combinedMult) {
-
-        boolean isConsole = sender instanceof ConsoleCommandSender;
-        String senderName = isConsole ? "Consola" : ((Player) sender).getName();
+                                          double globalMult, double personalMult, double combinedMult) {
 
         if (bonusTPs > 0) {
             sender.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
@@ -129,13 +128,11 @@ public class GiveTpsCommandInterceptor implements Listener {
                 String personalPercent = String.format("%.0f%%", (personalMult - 1.0) * 100);
                 target.sendMessage(CC.translate("  &b⚡ Booster Personal: &a+" + personalPercent));
             }
-
-            target.sendMessage(CC.translate("  &7Otorgado por: &6" + senderName));
             target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
         } else {
-            sender.sendMessage(CC.translate("&a✓ Se han dado &6" + totalTPs + " TPs &aa &6" + target.getName()));
-            target.sendMessage(CC.translate("&a+ " + totalTPs + " TPs &7(de " + senderName + ")"));
+            sender.sendMessage(CC.translate("&a✓ Se han dado &6" + String.format(Locale.US, "%,d", totalTPs) + " TPs &aa &6" + target.getName()));
+            target.sendMessage(CC.translate("&8[&c+&8] &c" + String.format(Locale.US, "%,d", totalTPs) + " TPS"));
         }
     }
 }

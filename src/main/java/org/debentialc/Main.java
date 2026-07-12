@@ -22,6 +22,7 @@ import org.debentialc.customitems.tools.fragments.FragmentBonusIntegration;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
 import org.debentialc.raids.events.NPCDeathListener;
 import org.debentialc.raids.managers.RaidStorageManager;
+import org.debentialc.rebirths.RebirthModule;
 import org.debentialc.service.ClassesRegistration;
 import org.debentialc.service.commands.CommandFramework;
 
@@ -56,11 +57,13 @@ public class Main extends JavaPlugin {
         classesRegistration.loadCommands("org.debentialc.raids.commands");
         classesRegistration.loadCommands("org.debentialc.boosters.commands");
         classesRegistration.loadCommands("org.debentialc.claims.commands");
+        classesRegistration.loadCommands("org.debentialc.rebirths.commands");
 
         classesRegistration.loadListeners("org.debentialc.customitems.events");
         classesRegistration.loadListeners("org.debentialc.boosters.events");
         classesRegistration.loadListeners("org.debentialc.raids.events");
         classesRegistration.loadListeners("org.debentialc.claims.events");
+        classesRegistration.loadListeners("org.debentialc.rebirths.events");
 
         CustomManager.armorTask();
         effectsTask();
@@ -72,6 +75,7 @@ public class Main extends JavaPlugin {
         BoosterModule.initialize(this);
         PlaceholderModule.initialize(this);
         ClaimsModule.initialize(this);
+        RebirthModule.initialize(this);
 
         registerCustomNPCsEvents();
 

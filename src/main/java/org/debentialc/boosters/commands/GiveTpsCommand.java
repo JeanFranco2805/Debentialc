@@ -18,7 +18,7 @@ public class GiveTpsCommand extends BaseCommand {
     @Command(aliases = "dartps", inGameOnly = false, permission = "debentialc.dartps", name = "dartps")
     @Override
     public void onCommand(CommandArgs command) throws IOException {
-        if (command.getSender() instanceof ConsoleCommandSender) {
+        if (!(command.getSender() instanceof Player)) {
             String targetName = command.getArgs(0);
             Player target = Main.instance.getServer().getPlayer(targetName);
             if (target == null) {
