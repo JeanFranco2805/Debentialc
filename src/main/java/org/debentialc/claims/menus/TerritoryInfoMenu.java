@@ -4,6 +4,7 @@ import fr.minuskube.inv.ClickableItem;
 import fr.minuskube.inv.SmartInventory;
 import fr.minuskube.inv.content.InventoryContents;
 import fr.minuskube.inv.content.InventoryProvider;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -77,6 +78,60 @@ public class TerritoryInfoMenu {
                         boolean isOwner = terrain.isOwner(player.getUniqueId());
                         boolean isAdmin = player.hasPermission(ClaimsPermissions.ADMIN_MANAGE);
 
+                        // ── Teletransporte ──────────────────────────────────────────
+                        // Visible para: propietario, miembro, y visitante si el terreno
+                        // ya fue generado (tiene origen).
+                        if (terrain.isCommitted() && terrain.getOrigin() != null) {
+                            boolean isMember = terrain.isMember(player.getUniqueId());
+
+                            ItemStack tpBtn;
+                            if (isOwner) {
+                                tpBtn = new ItemStack(Material.ENDER_PEARL);
+                            } else {
+                                tpBtn = new ItemStack(Material.EYE_OF_ENDER);
+                            }
+                            ItemMeta tpMeta = tpBtn.getItemMeta();
+
+                            if (isOwner) {
+                                tpMeta.setDisplayName(CC.translate("&b&lIr a mi Terreno"));
+                                tpMeta.setLore(Arrays.asList(
+                                        CC.translate("&7Te teletransporta al centro de tu terreno."),
+                                        CC.translate(""),
+                                        CC.translate("&b[CLICK PARA TELETRANSPORTARTE]")
+                                ));
+                            } else {
+                                tpMeta.setDisplayName(CC.translate("&a&lVisitar Terreno"));
+                                String ownerLabel = terrain.hasOwner()
+                                        ? "&7Propietario: &f" + terrain.getOwnerName()
+                                        : "&7Terreno en venta";
+                                tpMeta.setLore(Arrays.asList(
+                                        CC.translate(ownerLabel),
+                                        CC.translate(""),
+                                        CC.translate("&a[CLICK PARA VISITAR]")
+                                ));
+                            }
+                            tpBtn.setItemMeta(tpMeta);
+
+                            contents.set(2, 2, ClickableItem.of(tpBtn, e -> {
+                                player.closeInventory();
+                                Location origin = terrain.getOrigin();
+                                int size = terrain.getSizeInBlocks();
+                                double cx = origin.getBlockX() + (size / 2.0);
+                                double cz = origin.getBlockZ() + (size / 2.0);
+                                Location dest = new Location(
+                                        origin.getWorld(), cx, origin.getBlockY() + 1, cz,
+                                        player.getLocation().getYaw(), player.getLocation().getPitch()
+                                );
+                                player.teleport(dest);
+                                if (isOwner) {
+                                    player.sendMessage(CC.translate("&7Teletransportado a tu terreno &f" + terrain.getId() + "&7."));
+                                } else {
+                                    player.sendMessage(CC.translate("&7Visitando el terreno &f" + terrain.getId()
+                                            + (terrain.hasOwner() ? " &7de &f" + terrain.getOwnerName() : "") + "&7."));
+                                }
+                            }));
+                        }
+
                         // ── Comprar ─────────────────────────────────────────────────
                         if (!terrain.hasOwner() && terrain.isCommitted() && terrain.getPrice() > 0
                                 && TerrainManager.getInstance().getEconomy() != null) {
@@ -146,8 +201,6 @@ public class TerritoryInfoMenu {
                         }
 
                         // ── ✦ PERSONALIZAR (VIP) ─────────────────────────────────────
-                        // Visible si el jugador es propietario del terreno Y tiene al menos
-                        // uno de los permisos de personalización.
                         boolean hasAnyCustPerm =
                                 player.hasPermission(ClaimsPermissions.TERRAIN_CUSTOMIZE_BIOME)
                                         || player.hasPermission(ClaimsPermissions.TERRAIN_CUSTOMIZE_FLOOR)
@@ -180,6 +233,7 @@ public class TerritoryInfoMenu {
                             contents.set(3, 5, ClickableItem.empty(lockedBtn));
                         }
 
+                        // ── Admin ───────────────────────────────────────────────────
                         if (isAdmin) {
                             ItemStack adminButton = new ItemStack(Material.COMMAND);
                             ItemMeta adminMeta = adminButton.getItemMeta();

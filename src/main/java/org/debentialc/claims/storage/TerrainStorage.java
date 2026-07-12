@@ -4,22 +4,42 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.debentialc.Main;
+import org.debentialc.claims.managers.TerrainManager;
 import org.debentialc.claims.models.Terrain;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 public class TerrainStorage {
 
     private final File folder;
+
+    /**
+     * Terrenos que tenían worldName guardado pero el mundo no estaba cargado
+     * en el momento de loadAll(). Se reintenta resolver en el primer tick.
+     */
+    private static final List<PendingOrigin> pendingOrigins = new ArrayList<PendingOrigin>();
+
+    private static class PendingOrigin {
+        final String terrainId;
+        final String worldName;
+        final int x, y, z;
+
+        PendingOrigin(String terrainId, String worldName, int x, int y, int z) {
+            this.terrainId = terrainId;
+            this.worldName = worldName;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
 
     public TerrainStorage() {
         folder = new File(Main.instance.getDataFolder(), "claims" + File.separator + "terrains");
@@ -29,7 +49,7 @@ public class TerrainStorage {
     public void saveTerrain(Terrain terrain) {
         File file = new File(folder, terrain.getId() + ".dat");
         try {
-            java.util.Properties props = new java.util.Properties();
+            Properties props = new Properties();
             props.setProperty("id", terrain.getId());
             props.setProperty("chunks", String.valueOf(terrain.getChunks()));
             props.setProperty("price", String.valueOf(terrain.getPrice()));
@@ -79,12 +99,14 @@ public class TerrainStorage {
         for (File file : files) {
             if (!file.getName().endsWith(".dat")) continue;
             try {
-                java.util.Properties props = new java.util.Properties();
+                Properties props = new Properties();
                 FileInputStream fis = new FileInputStream(file);
                 props.load(fis);
                 fis.close();
 
                 String id = props.getProperty("id");
+                if (id == null || id.isEmpty()) continue;
+
                 int chunks = Integer.parseInt(props.getProperty("chunks", "1"));
                 Terrain terrain = new Terrain(id, chunks);
                 terrain.setPrice(Double.parseDouble(props.getProperty("price", "0")));
@@ -97,13 +119,20 @@ public class TerrainStorage {
                 }
 
                 String worldName = props.getProperty("world");
-                if (worldName != null) {
+                if (worldName != null && !worldName.isEmpty()) {
+                    int x = Integer.parseInt(props.getProperty("x", "0"));
+                    int y = Integer.parseInt(props.getProperty("y", "64"));
+                    int z = Integer.parseInt(props.getProperty("z", "0"));
+
                     World world = Bukkit.getWorld(worldName);
                     if (world != null) {
-                        int x = Integer.parseInt(props.getProperty("x", "0"));
-                        int y = Integer.parseInt(props.getProperty("y", "64"));
-                        int z = Integer.parseInt(props.getProperty("z", "0"));
                         terrain.setOrigin(new Location(world, x, y, z));
+                    } else {
+                        // El mundo no está cargado aún — guardar para resolver luego
+                        pendingOrigins.add(new PendingOrigin(id, worldName, x, y, z));
+                        Main.instance.getLogger().warning(
+                                "[Claims] Mundo '" + worldName + "' no disponible al cargar terreno '"
+                                        + id + "'. Se reintentará en el siguiente tick.");
                     }
                 }
 
@@ -113,11 +142,10 @@ public class TerrainStorage {
                         String[] parts = memberEntry.split(":");
                         if (parts.length < 2) continue;
                         UUID uuid = UUID.fromString(parts[0]);
-                        String name = null;
                         for (String roleStr : parts[1].split(",")) {
                             try {
-                                Terrain.MemberRole role = Terrain.MemberRole.valueOf(roleStr);
-                                terrain.addMemberRole(uuid, name, role);
+                                Terrain.MemberRole role = Terrain.MemberRole.valueOf(roleStr.trim());
+                                terrain.addMemberRole(uuid, null, role);
                             } catch (Exception ignore) {}
                         }
                     }
@@ -125,10 +153,49 @@ public class TerrainStorage {
 
                 terrains.put(id, terrain);
             } catch (Exception e) {
+                Main.instance.getLogger().warning("[Claims] Error cargando terreno desde " + file.getName() + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
+
+        // Programar resolución de mundos pendientes en el siguiente tick
+        if (!pendingOrigins.isEmpty()) {
+            Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
+                public void run() {
+                    resolvePendingOrigins();
+                }
+            }, 1L);
+        }
+
         return terrains;
+    }
+
+    /**
+     * Intenta resolver los orígenes pendientes cuyos mundos no estaban cargados.
+     * Se llama automáticamente 1 tick después del inicio del servidor.
+     */
+    private void resolvePendingOrigins() {
+        List<PendingOrigin> stillPending = new ArrayList<PendingOrigin>();
+
+        for (PendingOrigin po : pendingOrigins) {
+            World world = Bukkit.getWorld(po.worldName);
+            if (world != null) {
+                Terrain terrain = TerrainManager.getInstance().getTerrain(po.terrainId);
+                if (terrain != null) {
+                    terrain.setOrigin(new Location(world, po.x, po.y, po.z));
+                    Main.instance.getLogger().info(
+                            "[Claims] Origen del terreno '" + po.terrainId + "' resuelto correctamente.");
+                }
+            } else {
+                stillPending.add(po);
+                Main.instance.getLogger().warning(
+                        "[Claims] El mundo '" + po.worldName + "' sigue sin estar disponible para el terreno '"
+                                + po.terrainId + "'. El terreno quedará sin posición hasta el próximo reinicio.");
+            }
+        }
+
+        pendingOrigins.clear();
+        pendingOrigins.addAll(stillPending);
     }
 
     public void deleteTerrain(String id) {

@@ -40,11 +40,19 @@ public class CustomArmorStorage {
 
     public void reload() {
         if (!armorFile.exists()) {
-            try { armorFile.createNewFile(); } catch (IOException e) { e.printStackTrace(); }
+            try {
+                armorFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         this.armorConfig = YamlConfiguration.loadConfiguration(armorFile);
     }
 
+    /**
+     * Carga todas las armaduras del disco y las pone en RegisterItem.items.
+     * Este es el método que DEBE llamarse en onEnable().
+     */
     public void initialLoad() {
         reload();
         Map<String, CustomArmor> loaded = loadAllArmors();
@@ -54,16 +62,47 @@ public class CustomArmorStorage {
 
     public void saveArmor(CustomArmor armor) {
         String path = "armors." + armor.getId();
+
+        // Campos básicos
         armorConfig.set(path + ".id",            armor.getId());
         armorConfig.set(path + ".material",      armor.getMaterial());
         armorConfig.set(path + ".displayName",   armor.getDisplayName());
-        armorConfig.set(path + ".lore",          armor.getLore());
         armorConfig.set(path + ".isArmor",       armor.isArmor());
-        armorConfig.set(path + ".bonusStat",     new HashMap<String, Double>(armor.getValueByStat()));
-        armorConfig.set(path + ".operations",    new HashMap<String, String>(armor.getOperation()));
-        armorConfig.set(path + ".effects",       new HashMap<String, Double>(armor.getEffects()));
         armorConfig.set(path + ".maxDurability", armor.getMaxDurability());
         armorConfig.set(path + ".unbreakable",   armor.isUnbreakable());
+
+        // Lore: puede ser null — guardamos lista vacía para evitar
+        // que al leer con getStringList() devuelva null y revienten los menús
+        List<String> lore = armor.getLore();
+        armorConfig.set(path + ".lore", lore != null ? lore : new ArrayList<String>());
+
+        // bonusStat (HashMap<String, Double>)
+        if (armor.getValueByStat() != null && !armor.getValueByStat().isEmpty()) {
+            for (Map.Entry<String, Double> entry : armor.getValueByStat().entrySet()) {
+                armorConfig.set(path + ".bonusStat." + entry.getKey(), entry.getValue());
+            }
+        } else {
+            // Limpiar la sección si está vacía para no dejar datos viejos
+            armorConfig.set(path + ".bonusStat", null);
+        }
+
+        // operations (HashMap<String, String>)
+        if (armor.getOperation() != null && !armor.getOperation().isEmpty()) {
+            for (Map.Entry<String, String> entry : armor.getOperation().entrySet()) {
+                armorConfig.set(path + ".operations." + entry.getKey(), entry.getValue());
+            }
+        } else {
+            armorConfig.set(path + ".operations", null);
+        }
+
+        // effects (HashMap<String, Double>)
+        if (armor.getEffects() != null && !armor.getEffects().isEmpty()) {
+            for (Map.Entry<String, Double> entry : armor.getEffects().entrySet()) {
+                armorConfig.set(path + ".effects." + entry.getKey(), entry.getValue());
+            }
+        } else {
+            armorConfig.set(path + ".effects", null);
+        }
 
         try {
             armorConfig.save(armorFile);
@@ -71,6 +110,7 @@ public class CustomArmorStorage {
             e.printStackTrace();
         }
 
+        // Mantener en memoria también
         RegisterItem.items.put(armor.getId(), armor);
     }
 
@@ -90,12 +130,16 @@ public class CustomArmorStorage {
 
         CustomArmor armor = new CustomArmor();
         armor.setId(id);
-        armor.setMaterial(armorConfig.getInt(path + ".material"));
-        armor.setDisplayName(armorConfig.getString(path + ".displayName"));
-        armor.setLore(armorConfig.getStringList(path + ".lore"));
+        armor.setMaterial(armorConfig.getInt(path + ".material", 0));
+        armor.setDisplayName(armorConfig.getString(path + ".displayName", ""));
         armor.setMaxDurability(armorConfig.getInt(path + ".maxDurability", -1));
         armor.setUnbreakable(armorConfig.getBoolean(path + ".unbreakable", false));
 
+        // Lore — getStringList nunca devuelve null, devuelve lista vacía
+        List<String> lore = armorConfig.getStringList(path + ".lore");
+        armor.setLore(lore.isEmpty() ? null : lore);
+
+        // bonusStat
         if (armorConfig.contains(path + ".bonusStat")) {
             HashMap<String, Double> bonusStat = new HashMap<String, Double>();
             for (String key : armorConfig.getConfigurationSection(path + ".bonusStat").getKeys(false)) {
@@ -104,6 +148,7 @@ public class CustomArmorStorage {
             armor.setValueByStat(bonusStat);
         }
 
+        // operations
         if (armorConfig.contains(path + ".operations")) {
             HashMap<String, String> operations = new HashMap<String, String>();
             for (String key : armorConfig.getConfigurationSection(path + ".operations").getKeys(false)) {
@@ -112,6 +157,7 @@ public class CustomArmorStorage {
             armor.setOperation(operations);
         }
 
+        // effects
         if (armorConfig.contains(path + ".effects")) {
             HashMap<String, Double> effects = new HashMap<String, Double>();
             for (String key : armorConfig.getConfigurationSection(path + ".effects").getKeys(false)) {
@@ -131,9 +177,5 @@ public class CustomArmorStorage {
             if (armor != null) armors.put(id, armor);
         }
         return armors;
-    }
-
-    public void loadArmors() {
-        reload();
     }
 }

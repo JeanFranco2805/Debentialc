@@ -16,6 +16,7 @@ import org.debentialc.boosters.models.PersonalBooster;
 import org.debentialc.boosters.placeholders.PlaceholderModule;
 import org.debentialc.claims.ClaimsModule;
 import org.debentialc.claims.managers.TerrainCustomizeManager;
+import org.debentialc.claims.storage.TerrainStorage;
 import org.debentialc.customitems.tools.ci.CustomManager;
 import org.debentialc.customitems.tools.fragments.FragmentBonusIntegration;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
@@ -51,22 +52,19 @@ public class Main extends JavaPlugin {
         System.out.println("Version: 1.1.5 ");
         System.out.println("By DelawareX");
 
-        // Cargar comandos
         classesRegistration.loadCommands("org.debentialc.customitems.commands");
         classesRegistration.loadCommands("org.debentialc.raids.commands");
         classesRegistration.loadCommands("org.debentialc.boosters.commands");
         classesRegistration.loadCommands("org.debentialc.claims.commands");
 
-        // Cargar listeners de Bukkit
         classesRegistration.loadListeners("org.debentialc.customitems.events");
         classesRegistration.loadListeners("org.debentialc.boosters.events");
         classesRegistration.loadListeners("org.debentialc.raids.events");
         classesRegistration.loadListeners("org.debentialc.claims.events");
 
-        // Tareas
         CustomManager.armorTask();
         effectsTask();
-        new CustomArmorStorage();
+        CustomArmorStorage.getInstance().initialLoad();
         loadAllConfigs();
         armorTask();
         startTerrainEffectsTask();
@@ -144,7 +142,6 @@ public class Main extends JavaPlugin {
     public static void callDeathEvent(INpcEvent.DiedEvent event) {
         NPCDeathListener npcDeathListener = new NPCDeathListener();
         npcDeathListener.onNpcDie(event);
-
     }
 
     @Override
