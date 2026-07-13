@@ -62,6 +62,28 @@ public class RebirthPlayerMenus {
                             lore.add(CC.translate("&7Rebirths: &f" + block.getRebirthIds().size()));
                             lore.add(CC.translate("&7Guarda nivel: " + (block.isSaveLevel() ? "&aSí" : "&cNo")));
 
+                            if (block.isSaveLevel()) {
+                                org.debentialc.rebirths.model.PlayerBlockStats savedStats = RebirthBlockManager.getInstance().getPlayerBlockStats(player, block.getId());
+                                int savedLevel = savedStats.getLevel();
+                                if (savedLevel > 0) {
+                                    lore.add(CC.translate("&7Nivel Guardado: &e" + savedLevel));
+                                } else {
+                                    lore.add(CC.translate("&7Nivel Guardado: &cNinguno"));
+                                }
+                            }
+
+                            double totalBonus = 0.0;
+                            for (int rebirthId : block.getRebirthIds()) {
+                                if (currentLevel >= rebirthId) {
+                                    Rebirth rebirth = RebirthManager.getInstance().getRebirth(rebirthId);
+                                    if (rebirth != null) {
+                                        totalBonus += rebirth.getTpBonusPercent();
+                                    }
+                                }
+                            }
+
+                            lore.add(CC.translate("&7Potenciador: &e" + String.format("%.2f", totalBonus) + "%"));
+
                             int unlocked = 0;
                             for (int rebirthId : block.getRebirthIds()) {
                                 if (currentLevel >= rebirthId) unlocked++;

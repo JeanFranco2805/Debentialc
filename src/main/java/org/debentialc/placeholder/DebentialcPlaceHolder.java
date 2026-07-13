@@ -4,6 +4,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import noppes.npcs.api.entity.IDBCPlayer;
 import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.debentialc.boosters.core.BoosterSettings;
 import org.debentialc.boosters.managers.GlobalBoosterManager;
@@ -39,8 +40,9 @@ public class DebentialcPlaceHolder extends PlaceholderExpansion {
     }
 
     @Override
-    public String onPlaceholderRequest(Player player, String identifier) {
-
+    public String onRequest(OfflinePlayer offline, String identifier) {
+        if (offline == null) return "";
+        Player player = offline.getPlayer();
         switch (identifier.toLowerCase()) {
 
             case "level":
@@ -61,7 +63,6 @@ public class DebentialcPlaceHolder extends PlaceholderExpansion {
                     return "0";
                 }
 
-            case "bank_balance":
             case "bank-balance":
                 if (player == null) return "0";
                 try {

@@ -107,6 +107,16 @@ public class RebirthManager {
         RebirthStorage.getInstance().savePlayerRebirthLevel(player.getUniqueId(), level);
     }
 
+    public void resetPlayerRebirthLevel(Player player) {
+        playerRebirthCache.put(player.getUniqueId(), 0);
+        RebirthStorage.getInstance().resetPlayerRebirthLevel(player.getUniqueId());
+    }
+
+    public void resetPlayerRebirthLevel(UUID uuid) {
+        playerRebirthCache.remove(uuid);
+        RebirthStorage.getInstance().resetPlayerRebirthLevel(uuid);
+    }
+
     public void loadPlayerData(Player player) {
         int level = RebirthStorage.getInstance().loadPlayerRebirthLevel(player.getUniqueId());
         playerRebirthCache.put(player.getUniqueId(), level);

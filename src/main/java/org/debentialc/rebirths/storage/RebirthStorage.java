@@ -148,4 +148,18 @@ public class RebirthStorage {
             e.printStackTrace();
         }
     }
+
+    public void resetPlayerRebirthLevel(UUID uuid) {
+        File file = getPlayerFile(uuid);
+        if (!file.exists()) {
+            return;
+        }
+        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+        config.set("rebirthLevel", 0);
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

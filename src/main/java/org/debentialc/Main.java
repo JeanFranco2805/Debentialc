@@ -1,9 +1,19 @@
 package org.debentialc;
 
+import com.massivecraft.factions.Rel;
+import com.massivecraft.factions.entity.BoardColl;
+import com.massivecraft.factions.entity.Faction;
+import com.massivecraft.factions.entity.FactionColl;
+import com.massivecraft.factions.entity.MPlayer;
+import com.massivecraft.massivecore.ps.PS;
 import lombok.Getter;
+import noppes.npcs.api.entity.ICustomNpc;
 import noppes.npcs.api.event.INpcEvent;
 import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -23,6 +33,9 @@ import org.debentialc.customitems.tools.storage.CustomArmorStorage;
 import org.debentialc.raids.events.NPCDeathListener;
 import org.debentialc.raids.managers.RaidStorageManager;
 import org.debentialc.rebirths.RebirthModule;
+import org.debentialc.rebirths.managers.RebirthBlockManager;
+import org.debentialc.rebirths.managers.RebirthManager;
+import org.debentialc.rebirths.storage.RebirthStorage;
 import org.debentialc.service.ClassesRegistration;
 import org.debentialc.service.commands.CommandFramework;
 
@@ -148,6 +161,33 @@ public class Main extends JavaPlugin {
         npcDeathListener.onNpcDie(event);
     }
 
+    /**
+     * Devuelve el nivel de rebirth local que un jugador tiene desbloqueado en un bloque.
+     * El conteo se reinicia en cada bloque (bloque 1: 1-10, bloque 2: 1-10, etc.).
+     *
+     * @param playerName Nombre del jugador (puede estar online u offline)
+     * @param blockId    ID del bloque
+     * @return Nivel de rebirth desbloqueado dentro del bloque (0 si no tiene ninguno)
+     */
+    public static int getPlayerRebirthLevelInBlock(String playerName, int blockId) {
+        Player onlinePlayer = Bukkit.getPlayerExact(playerName);
+
+        java.util.UUID uuid;
+        if (onlinePlayer != null) {
+            uuid = onlinePlayer.getUniqueId();
+        } else {
+            @SuppressWarnings("deprecation")
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+            if (offlinePlayer == null || !offlinePlayer.hasPlayedBefore()) {
+                return 0;
+            }
+            uuid = offlinePlayer.getUniqueId();
+        }
+
+        int globalLevel = RebirthStorage.getInstance().loadPlayerRebirthLevel(uuid);
+        return RebirthBlockManager.getInstance().getLocalRebirthLevel(globalLevel, blockId);
+    }
+
     @Override
     public void onDisable() {
         BoosterModule.shutdown();
@@ -229,5 +269,103 @@ public class Main extends JavaPlugin {
         player.sendMessage("§aValor base: " + baseValue);
         player.sendMessage("§eMultiplicador: " + BoosterUtils.formatMultiplier(multiplier));
         player.sendMessage("§6Resultado: " + result);
+    }
+    public void lossPower(ICustomNpc<?> npc){
+        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
+        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
+        for (MPlayer mPlayer : faction.getMPlayers()) {
+            mPlayer.setPower(mPlayer.getPower() - 1);
+        }
+    }
+    public void lossPower(ICustomNpc<?> npc, int power){
+        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
+        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
+        for (MPlayer mPlayer : faction.getMPlayers()) {
+            mPlayer.setPower(mPlayer.getPower() - power);
+        }
+    }
+    public void unclaim ( ICustomNpc<?> npc ) {
+        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
+        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
+        int chunkX = location.getChunk ( ).getX ( );
+        int chunkZ = location.getChunk ( ).getZ ( );
+        PS ps = PS.valueOf ( location.getWorld ( ).getName ( ), chunkX, chunkZ );
+        Bukkit.broadcastMessage ( "§cSe desclaimó el chunk en X:" + chunkX + " Z:" + chunkZ + " de la facción " + faction.getName ( ) );
+        Faction wilderness = FactionColl.get ( ).getNone ( );
+        BoardColl.get ( ).setFactionAt ( ps, wilderness );
+    }
+    public void unclaim(ICustomNpc<?> npc, int radio) {
+        World world = Main.instance.getServer().getWorld("world");
+        Location location = new Location(world, npc.getX(), npc.getY(), npc.getZ());
+
+        // Facción dueña del chunk actual
+        Faction faction = BoardColl.get().getFactionAt(PS.valueOf(location));
+        if (faction == null) return;
+
+        // Chunk central
+        int centerX = location.getChunk().getX();
+        int centerZ = location.getChunk().getZ();
+
+        // Wilderness (sin dueño)
+        Faction wilderness = FactionColl.get().getNone();
+
+        int unclaimed = 0;
+
+        for (int dx = -radio; dx <= radio; dx++) {
+            for (int dz = -radio; dz <= radio; dz++) {
+                if (dx * dx + dz * dz > radio * radio) continue;
+
+                int chunkX = centerX + dx;
+                int chunkZ = centerZ + dz;
+
+                PS ps = PS.valueOf(world.getName(), chunkX, chunkZ);
+                Faction current = BoardColl.get().getFactionAt(ps);
+
+                if (current != null && current.equals(faction)) {
+                    BoardColl.get().setFactionAt(ps, wilderness);
+                    unclaimed++;
+                }
+            }
+        }
+
+        Bukkit.broadcastMessage("§cSe desclaimaron §e" + unclaimed + " §cchunks en radio de " + radio + " de la facción " + faction.getName());
+    }
+    public String getPlayerFactionName ( Player player ) {
+        MPlayer mPlayer = MPlayer.get ( player );
+        Faction faction = mPlayer.getFaction ( );
+        if (faction == null) return null;
+        return faction.getName ( );
+    }
+
+    public String getPlayerAtFactionLoc ( Player player ) {
+        Faction faction2 = BoardColl.get ( ).getFactionAt ( PS.valueOf ( player.getLocation ( ) ) );
+        if (faction2 == null) return null;
+        return faction2.getName ( );
+    }
+
+    public String getTopLandFaction () {
+        return FactionColl.get ( ).getAll ( ).stream ( ).reduce ( ( a, b ) -> {
+            if (a.getLandCount ( ) > b.getLandCount ( )) return a;
+            else return b;
+        } ).orElse ( new Faction ( ) ).getName ( );
+    }
+
+    public boolean hasAccessFaction ( String name ) {
+        Player player = Bukkit.getPlayer ( name );
+        MPlayer mPlayer = MPlayer.get ( player );
+        Faction faction = mPlayer.getFaction ( );
+        long alliesCount = FactionColl.get ( ).getAll ( ).stream ( )
+                .filter ( e -> e.getRelationTo ( faction ) == Rel.ALLY )
+                .count ( );
+
+        if (faction == null) return false;
+        Faction faction2 = BoardColl.get ( ).getFactionAt ( PS.valueOf ( player.getLocation ( ) ) );
+        if (faction2 != null) {
+            if (faction.getName ( ).equalsIgnoreCase ( faction2.getName ( ) )
+                    && !faction.getName ( ).contains ( "Wilderness" )) {
+                return true;
+            }
+        }
+        return false;
     }
 }

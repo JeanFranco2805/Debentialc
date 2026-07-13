@@ -9,14 +9,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.fragments.CustomizedArmor;
 import org.debentialc.customitems.tools.fragments.FragmentManager;
 import org.debentialc.customitems.tools.fragments.TierFragment;
+import org.debentialc.service.CC;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Listener para manejar la aplicación de fragmentos de tier a armaduras
- * VERSIÓN CORREGIDA: Validación correcta de porcentajes y operaciones permitidas
+ * VERSIÓN CORREGIDA: Si un atributo excede el límite del nuevo tier o usa una operación
+ * no permitida, se reinicia a 0 en lugar de bloquear el upgrade.
  */
 public class TierFragmentApplyListener implements Listener {
 
@@ -90,7 +96,7 @@ public class TierFragmentApplyListener implements Listener {
             return;
         }
 
-        // Validar límites del nuevo tier
+        // Cargar armadura
         CustomizedArmor customArmor = CustomizedArmor.fromItemStack(targetArmor);
 
         if (customArmor == null) {
@@ -98,76 +104,36 @@ public class TierFragmentApplyListener implements Listener {
             return;
         }
 
-        // VALIDACIÓN CORREGIDA: Usar exceedsLimit que maneja correctamente los multiplicadores
-        boolean exceedsLimits = false;
-        StringBuilder errorMsg = new StringBuilder();
+        List<String> defaultOperations = FragmentManager.getInstance().getTierConfig().getAllowedOperations(targetTier);
+        String defaultOperation = defaultOperations.isEmpty() ? "+" : defaultOperations.get(0);
 
-        for (java.util.Map.Entry<String, Integer> entry : customArmor.getAttributes().entrySet()) {
+        List<String> resetAttributes = new ArrayList<>();
+
+        // Detectar atributos que deben reiniciarse
+        Iterator<Map.Entry<String, Integer>> attrIterator = customArmor.getAttributes().entrySet().iterator();
+        while (attrIterator.hasNext()) {
+            Map.Entry<String, Integer> entry = attrIterator.next();
             String attr = entry.getKey();
             int currentValue = entry.getValue();
             String operation = customArmor.getOperations().getOrDefault(attr, "+");
 
-            // Usar el método corregido
-            if (FragmentManager.getInstance().getTierConfig().exceedsLimit(targetTier, attr, currentValue, operation)) {
-                exceedsLimits = true;
-                if (errorMsg.length() == 0) {
-                    errorMsg.append(CC.translate("&c✗ Atributos exceden límites del nuevo tier:\n&7"));
-                } else {
-                    errorMsg.append(", ");
-                }
+            boolean needsReset = false;
 
-                int newLimit = FragmentManager.getInstance().getTierConfig().getLimit(targetTier, attr);
-
-                String displayValue;
-                if (operation.equals("*")) {
-                    double percentage = (currentValue / 100.0 - 1.0) * 100.0;
-                    displayValue = String.format("%+.0f%%", percentage);
-                } else {
-                    displayValue = (currentValue >= 0 ? "+" : "") + currentValue;
-                }
-
-                errorMsg.append(attr).append(": ").append(displayValue);
-                errorMsg.append(" (límite: ").append(newLimit).append(")");
-            }
-        }
-
-        if (exceedsLimits) {
-            player.sendMessage("");
-            player.sendMessage(errorMsg.toString());
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&7Usa fragmentos negativos para reducir valores"));
-            player.sendMessage("");
-            return;
-        }
-
-        // VALIDACIÓN NUEVA: Verificar operaciones permitidas en el nuevo tier
-        boolean hasInvalidOperations = false;
-        StringBuilder opErrorMsg = new StringBuilder();
-
-        for (java.util.Map.Entry<String, String> entry : customArmor.getOperations().entrySet()) {
-            String attr = entry.getKey();
-            String operation = entry.getValue();
-
+            // Operación no permitida en el nuevo tier
             if (!FragmentManager.getInstance().getTierConfig().isOperationAllowed(targetTier, operation)) {
-                hasInvalidOperations = true;
-                if (opErrorMsg.length() == 0) {
-                    opErrorMsg.append(CC.translate("&c✗ Operaciones NO permitidas en " + targetTier + ":\n&7"));
-                } else {
-                    opErrorMsg.append(", ");
-                }
-
-                opErrorMsg.append(attr).append(" (").append(operation).append(")");
+                needsReset = true;
             }
-        }
 
-        if (hasInvalidOperations) {
-            player.sendMessage("");
-            player.sendMessage(opErrorMsg.toString());
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&7Operaciones permitidas: &f" +
-                    String.join(", ", FragmentManager.getInstance().getTierConfig().getAllowedOperations(targetTier))));
-            player.sendMessage("");
-            return;
+            // Valor actual excede el límite del nuevo tier
+            if (!needsReset && FragmentManager.getInstance().getTierConfig().exceedsLimit(targetTier, attr, currentValue, operation)) {
+                needsReset = true;
+            }
+
+            if (needsReset) {
+                resetAttributes.add(attr);
+                attrIterator.remove();
+                customArmor.getOperations().remove(attr);
+            }
         }
 
         // APLICAR UPGRADE
@@ -198,8 +164,20 @@ public class TierFragmentApplyListener implements Listener {
         player.sendMessage(CC.translate("&7Tier anterior: &f" + oldTier));
         player.sendMessage(CC.translate("&7Tier nuevo: &a" + targetTier));
         player.sendMessage("");
-        player.sendMessage(CC.translate("&7Todos los stats y operaciones se mantuvieron"));
-        player.sendMessage("");
+
+        if (!resetAttributes.isEmpty()) {
+            player.sendMessage(CC.translate("&e⚠ Algunos atributos eran incompatibles con &f" + targetTier + " &ey se reiniciaron a 0:"));
+            StringBuilder attrs = new StringBuilder();
+            for (int i = 0; i < resetAttributes.size(); i++) {
+                if (i > 0) attrs.append(", ");
+                attrs.append(resetAttributes.get(i));
+            }
+            player.sendMessage(CC.translate("&7" + attrs.toString()));
+            player.sendMessage("");
+        } else {
+            player.sendMessage(CC.translate("&7Todos los stats y operaciones se mantuvieron"));
+            player.sendMessage("");
+        }
 
         // Efectos
         player.playSound(player.getLocation(), Sound.LEVEL_UP, 1.0f, 1.0f);
