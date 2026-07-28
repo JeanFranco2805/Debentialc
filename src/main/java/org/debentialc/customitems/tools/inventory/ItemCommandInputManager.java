@@ -84,7 +84,7 @@ public class ItemCommandInputManager {
         item.getCommands().add(command);
 
         // Guardar
-        CustomItemStorage storage = new CustomItemStorage();
+        CustomItemStorage storage = CustomItemStorage.getInstance();
         storage.saveItem(item);
 
         player.sendMessage("");

@@ -11,6 +11,7 @@ import org.debentialc.boosters.managers.GlobalBoosterManager;
 import org.debentialc.boosters.managers.PersonalBoosterManager;
 import org.debentialc.boosters.models.PersonalBooster;
 import org.debentialc.service.General;
+import org.debentialc.service.ServerUtil;
 
 public class DebentialcPlaceHolder extends PlaceholderExpansion {
 
@@ -73,7 +74,8 @@ public class DebentialcPlaceHolder extends PlaceholderExpansion {
                 }
 
             case "online":
-                return String.valueOf(Bukkit.getOnlinePlayers().length);
+                Player[] players = ServerUtil.getOnlinePlayers();
+                return String.valueOf(players.length);
 
             case "booster_global_multiplier":
             case "booster-global-multiplier":
@@ -106,7 +108,8 @@ public class DebentialcPlaceHolder extends PlaceholderExpansion {
                 if (player == null) return "Inactivo";
                 PersonalBooster pb = PersonalBoosterManager.getActiveBooster(player.getUniqueId());
                 if (pb != null) {
-                    long remaining = pb.getActivationTimeRemaining(BoosterSettings.getPersonalBoosterDuration());
+                    long remaining = pb.getActivationTimeRemaining();
+                    if (remaining < 0) return "∞";
                     return remaining > 0 ? formatTime(remaining) : "Inactivo";
                 }
                 return "Inactivo";

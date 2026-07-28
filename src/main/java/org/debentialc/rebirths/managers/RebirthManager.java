@@ -12,7 +12,7 @@ public class RebirthManager {
     private static final RebirthManager INSTANCE = new RebirthManager();
 
     private final Map<Integer, Rebirth> rebirths = new TreeMap<>();
-    private final Map<UUID, Integer> playerRebirthCache = new HashMap<>();
+    private final Map<UUID, Set<Integer>> playerUnlockedCache = new HashMap<>();
 
     private RebirthManager() {
         loadRebirths();
@@ -27,6 +27,34 @@ public class RebirthManager {
         rebirths.putAll(RebirthStorage.getInstance().loadAllRebirths());
     }
 
+    public Set<Integer> getUnlockedRebirths(Player player) {
+        return playerUnlockedCache.computeIfAbsent(player.getUniqueId(), uuid -> RebirthStorage.getInstance().loadPlayerUnlockedRebirths(uuid));
+    }
+
+    public Set<Integer> getUnlockedRebirths(UUID uuid) {
+        return playerUnlockedCache.computeIfAbsent(uuid, u -> RebirthStorage.getInstance().loadPlayerUnlockedRebirths(u));
+    }
+
+    public boolean hasRebirth(Player player, int rebirthId) {
+        return getUnlockedRebirths(player).contains(rebirthId);
+    }
+
+    public boolean hasRebirth(UUID uuid, int rebirthId) {
+        return getUnlockedRebirths(uuid).contains(rebirthId);
+    }
+
+    public void unlockRebirth(Player player, int rebirthId) {
+        Set<Integer> unlocked = getUnlockedRebirths(player);
+        unlocked.add(rebirthId);
+        RebirthStorage.getInstance().savePlayerUnlockedRebirths(player.getUniqueId(), unlocked);
+    }
+
+    public int getPlayerRebirthLevel(Player player) {
+        Set<Integer> unlocked = playerUnlockedCache.get(player.getUniqueId());
+        if (unlocked == null || unlocked.isEmpty()) return 0;
+        return unlocked.stream().max(Integer::compareTo).orElse(0);
+    }
+
     public void saveRebirth(Rebirth rebirth) {
         rebirths.put(rebirth.getId(), rebirth);
         RebirthStorage.getInstance().saveRebirth(rebirth);
@@ -35,17 +63,20 @@ public class RebirthManager {
     public void deleteRebirth(int id) {
         Rebirth rebirth = rebirths.get(id);
         if (rebirth != null) {
-            RebirthBlock block = RebirthBlockManager.getInstance().getBlock(rebirth.getBlockId());
-            if (block != null) {
-                block.getRebirthIds().remove(Integer.valueOf(id));
-                RebirthBlockManager.getInstance().saveBlock(block);
+            String blockId = rebirth.getBlockId();
+            if (blockId != null) {
+                RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
+                if (block != null) {
+                    block.getRebirthIds().remove(Integer.valueOf(id));
+                    RebirthBlockManager.getInstance().saveBlock(block);
+                }
             }
         }
         rebirths.remove(id);
         RebirthStorage.getInstance().deleteRebirth(id);
     }
 
-    public Rebirth createRebirthInBlock(int blockId) {
+    public Rebirth createRebirthInBlock(String blockId) {
         RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
         if (block == null) return null;
 
@@ -66,7 +97,7 @@ public class RebirthManager {
         return rebirth;
     }
 
-    public List<Rebirth> getRebirthsInBlock(int blockId) {
+    public List<Rebirth> getRebirthsInBlock(String blockId) {
         List<Rebirth> result = new ArrayList<>();
         RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
         if (block == null) return result;
@@ -98,50 +129,52 @@ public class RebirthManager {
         return rebirths.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
-    public int getPlayerRebirthLevel(Player player) {
-        return playerRebirthCache.getOrDefault(player.getUniqueId(), 0);
-    }
-
     public void setPlayerRebirthLevel(Player player, int level) {
-        playerRebirthCache.put(player.getUniqueId(), level);
-        RebirthStorage.getInstance().savePlayerRebirthLevel(player.getUniqueId(), level);
+        // Backward compatibility: creates a sequential set up to level
+        Set<Integer> unlocked = new HashSet<>();
+        for (int i = 1; i <= level; i++) {
+            unlocked.add(i);
+        }
+        playerUnlockedCache.put(player.getUniqueId(), unlocked);
+        RebirthStorage.getInstance().savePlayerUnlockedRebirths(player.getUniqueId(), unlocked);
     }
 
     public void resetPlayerRebirthLevel(Player player) {
-        playerRebirthCache.put(player.getUniqueId(), 0);
-        RebirthStorage.getInstance().resetPlayerRebirthLevel(player.getUniqueId());
+        playerUnlockedCache.remove(player.getUniqueId());
+        RebirthStorage.getInstance().resetPlayerUnlockedRebirths(player.getUniqueId());
     }
 
     public void resetPlayerRebirthLevel(UUID uuid) {
-        playerRebirthCache.remove(uuid);
-        RebirthStorage.getInstance().resetPlayerRebirthLevel(uuid);
+        playerUnlockedCache.remove(uuid);
+        RebirthStorage.getInstance().resetPlayerUnlockedRebirths(uuid);
     }
 
     public void loadPlayerData(Player player) {
-        int level = RebirthStorage.getInstance().loadPlayerRebirthLevel(player.getUniqueId());
-        playerRebirthCache.put(player.getUniqueId(), level);
+        Set<Integer> unlocked = RebirthStorage.getInstance().loadPlayerUnlockedRebirths(player.getUniqueId());
+        playerUnlockedCache.put(player.getUniqueId(), unlocked);
     }
 
     public void unloadPlayerData(Player player) {
-        playerRebirthCache.remove(player.getUniqueId());
+        playerUnlockedCache.remove(player.getUniqueId());
     }
 
     public boolean canUnlockRebirth(Player player, Rebirth rebirth) {
         return RebirthBlockManager.getInstance().canUnlockRebirthInBlock(player, rebirth);
     }
 
-    public boolean hasRebirth(Player player, int rebirthId) {
-        return getPlayerRebirthLevel(player) >= rebirthId;
-    }
-
     public double getRebirthMultiplier(Player player) {
-        int level = getPlayerRebirthLevel(player);
-        if (level <= 0) return 1.0;
+        Set<Integer> unlocked = getUnlockedRebirths(player);
+        if (unlocked.isEmpty()) return 1.0;
 
-        Rebirth rebirth = rebirths.get(level);
-        if (rebirth == null) return 1.0;
+        double totalBonus = 0.0;
+        for (int id : unlocked) {
+            Rebirth rebirth = rebirths.get(id);
+            if (rebirth != null) {
+                totalBonus += rebirth.getTpBonusPercent();
+            }
+        }
 
-        return rebirth.getMultiplier();
+        return 1.0 + (totalBonus / 100.0);
     }
 
     public int getHighestRebirthId() {

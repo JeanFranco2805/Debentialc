@@ -47,7 +47,7 @@ public class CustomItemMenus {
                         ));
                         listButton.setItemMeta(listMeta);
                         contents.set(1, 4, ClickableItem.of(listButton, e -> {
-                            openItemListMenu(1).open(player);
+                            openCategoryMenu(1).open(player);
                         }));
 
                         ItemStack helpButton = new ItemStack(Material.PAPER);
@@ -79,21 +79,172 @@ public class CustomItemMenus {
                 .build();
     }
 
-    public static SmartInventory openItemListMenu(int page) {
+    public static SmartInventory openCategoryMenu(int page) {
         return SmartInventory.builder()
-                .id("ci_list_menu_" + page)
+                .id("ci_category_menu_" + page)
                 .provider(new InventoryProvider() {
                     public void init(Player player, InventoryContents contents) {
-                        Set<String> itemIds = CustomItemCommand.items.keySet();
+                        Map<String, String> categories = new LinkedHashMap<>();
+                        boolean hasUncategorized = false;
+                        for (CustomItem item : CustomItemCommand.items.values()) {
+                            if (item.getCategory() == null || item.getCategory().trim().isEmpty()) {
+                                hasUncategorized = true;
+                            } else {
+                                String lower = item.getCategory().toLowerCase();
+                                if (!categories.containsKey(lower)) {
+                                    categories.put(lower, capitalize(item.getCategory()));
+                                }
+                            }
+                        }
+
                         int pageSize = 21;
-                        int totalPages = (int) Math.ceil((double) itemIds.size() / pageSize);
+                        List<String> categoryList = new ArrayList<>(categories.values());
+                        if (hasUncategorized) {
+                            categoryList.add(0, "Sin categoría");
+                        }
+                        categoryList.add(0, "Todos");
+
+                        int totalPages = (int) Math.ceil((double) categoryList.size() / pageSize);
+                        if (page < 1) return;
+                        if (page > totalPages && totalPages > 0) return;
+
+                        contents.fillBorders(ClickableItem.empty(createGlassPane()));
+
+                        ItemStack newCategoryButton = new ItemStack(Material.EMERALD_BLOCK);
+                        ItemMeta newCategoryMeta = newCategoryButton.getItemMeta();
+                        newCategoryMeta.setDisplayName(CC.translate("&a&l+ Nueva Categoría"));
+                        newCategoryMeta.setLore(Arrays.asList(
+                                CC.translate("&7Crea una categoría vacía"),
+                                CC.translate("&ay asigna items después"),
+                                CC.translate("&a[CLICK PARA CREAR]")
+                        ));
+                        newCategoryButton.setItemMeta(newCategoryMeta);
+                        contents.set(0, 0, ClickableItem.of(newCategoryButton, e -> {
+                            player.closeInventory();
+                            CategoryInputManager.startCategoryCreation(player);
+                        }));
+
+                        int start = (page - 1) * pageSize;
+                        int end = Math.min(start + pageSize, categoryList.size());
+
+                        int row = 1;
+                        int col = 1;
+
+                        for (int i = start; i < end; i++) {
+                            String category = categoryList.get(i);
+                            ItemStack displayItem = new ItemStack(Material.BOOK);
+                            ItemMeta meta = displayItem.getItemMeta();
+                            meta.setDisplayName(CC.translate("&e&l" + category));
+
+                            int count;
+                            String targetCategory;
+                            if (category.equals("Todos")) {
+                                count = CustomItemCommand.items.size();
+                                targetCategory = null;
+                            } else if (category.equals("Sin categoría")) {
+                                count = (int) CustomItemCommand.items.values().stream()
+                                        .filter(item -> item.getCategory() == null || item.getCategory().trim().isEmpty())
+                                        .count();
+                                targetCategory = "";
+                            } else {
+                                count = (int) CustomItemCommand.items.values().stream()
+                                        .filter(item -> category.equalsIgnoreCase(item.getCategory()))
+                                        .count();
+                                targetCategory = category.toLowerCase();
+                            }
+
+                            List<String> lore = new ArrayList<>();
+                            lore.add(CC.translate("&7Items: &f" + count));
+                            lore.add("");
+                            lore.add(CC.translate("&a[CLICK PARA VER]"));
+                            meta.setLore(lore);
+                            displayItem.setItemMeta(meta);
+
+                            String finalCategory = targetCategory;
+                            contents.set(row, col, ClickableItem.of(displayItem, e -> {
+                                openItemListMenu(1, finalCategory).open(player);
+                            }));
+
+                            col++;
+                            if (col >= 8) {
+                                col = 1;
+                                row++;
+                                if (row >= 4) break;
+                            }
+                        }
+
+                        if (page > 1) {
+                            ItemStack prevButton = new ItemStack(Material.ARROW);
+                            ItemMeta prevMeta = prevButton.getItemMeta();
+                            prevMeta.setDisplayName(CC.translate("&b← Anterior"));
+                            prevButton.setItemMeta(prevMeta);
+                            contents.set(4, 2, ClickableItem.of(prevButton, e -> {
+                                openCategoryMenu(page - 1).open(player);
+                            }));
+                        }
+
+                        ItemStack pageButton = new ItemStack(Material.BOOK);
+                        ItemMeta pageMeta = pageButton.getItemMeta();
+                        pageMeta.setDisplayName(CC.translate("&f&lPágina " + page + "/" + Math.max(1, totalPages)));
+                        pageButton.setItemMeta(pageMeta);
+                        contents.set(4, 4, ClickableItem.empty(pageButton));
+
+                        if (page < totalPages) {
+                            ItemStack nextButton = new ItemStack(Material.ARROW);
+                            ItemMeta nextMeta = nextButton.getItemMeta();
+                            nextMeta.setDisplayName(CC.translate("&bSiguiente →"));
+                            nextButton.setItemMeta(nextMeta);
+                            contents.set(4, 6, ClickableItem.of(nextButton, e -> {
+                                openCategoryMenu(page + 1).open(player);
+                            }));
+                        }
+
+                        ItemStack backButton = new ItemStack(Material.REDSTONE_BLOCK);
+                        ItemMeta backMeta = backButton.getItemMeta();
+                        backMeta.setDisplayName(CC.translate("&r← Atrás"));
+                        backButton.setItemMeta(backMeta);
+                        contents.set(4, 8, ClickableItem.of(backButton, e -> {
+                            createMainMenu().open(player);
+                        }));
+                    }
+
+                    public void update(Player player, InventoryContents contents) {
+                    }
+                })
+                .size(6, 9)
+                .title(CC.translate("&c&lCategorías de Items"))
+                .build();
+    }
+
+    public static SmartInventory openItemListMenu(int page, String category) {
+        return SmartInventory.builder()
+                .id("ci_list_menu_" + page + "_" + (category != null ? category : "all"))
+                .provider(new InventoryProvider() {
+                    public void init(Player player, InventoryContents contents) {
+                        List<String> ids = new ArrayList<>();
+                        for (Map.Entry<String, CustomItem> entry : CustomItemCommand.items.entrySet()) {
+                            CustomItem item = entry.getValue();
+                            if (category == null) {
+                                ids.add(entry.getKey());
+                            } else if (category.isEmpty()) {
+                                if (item.getCategory() == null || item.getCategory().trim().isEmpty()) {
+                                    ids.add(entry.getKey());
+                                }
+                            } else {
+                                if (category.equalsIgnoreCase(item.getCategory())) {
+                                    ids.add(entry.getKey());
+                                }
+                            }
+                        }
+
+                        int pageSize = 21;
+                        int totalPages = (int) Math.ceil((double) ids.size() / pageSize);
 
                         if (page < 1) return;
                         if (page > totalPages && totalPages > 0) return;
 
                         contents.fillBorders(ClickableItem.empty(createGlassPane()));
 
-                        List<String> ids = new ArrayList<>(itemIds);
                         Collections.sort(ids);
                         int start = (page - 1) * pageSize;
                         int end = Math.min(start + pageSize, ids.size());
@@ -111,6 +262,7 @@ public class CustomItemMenus {
 
                             List<String> lore = new ArrayList<>();
                             lore.add(CC.translate("&7Nombre: &f" + customItem.getDisplayName()));
+                            lore.add(CC.translate("&7Categoría: &f" + (customItem.getCategory() != null ? customItem.getCategory() : "Sin categoría")));
                             lore.add(CC.translate("&7Stats: &f" + customItem.getValueByStat().size()));
                             lore.add(CC.translate("&7Efectos: &f" + customItem.getEffects().size()));
                             lore.add(CC.translate("&7Lore: &f" + (customItem.getLore() != null ? customItem.getLore().size() + " líneas" : "Sin lore")));
@@ -122,7 +274,7 @@ public class CustomItemMenus {
 
                             String finalId = id;
                             contents.set(row, col, ClickableItem.of(displayItem, e -> {
-                                openEditItemMenu(finalId).open(player);
+                                openEditItemMenu(finalId, category).open(player);
                             }));
 
                             col++;
@@ -139,7 +291,7 @@ public class CustomItemMenus {
                             prevMeta.setDisplayName(CC.translate("&b← Anterior"));
                             prevButton.setItemMeta(prevMeta);
                             contents.set(4, 2, ClickableItem.of(prevButton, e -> {
-                                openItemListMenu(page - 1).open(player);
+                                openItemListMenu(page - 1, category).open(player);
                             }));
                         }
 
@@ -155,7 +307,7 @@ public class CustomItemMenus {
                             nextMeta.setDisplayName(CC.translate("&bSiguiente →"));
                             nextButton.setItemMeta(nextMeta);
                             contents.set(4, 6, ClickableItem.of(nextButton, e -> {
-                                openItemListMenu(page + 1).open(player);
+                                openItemListMenu(page + 1, category).open(player);
                             }));
                         }
 
@@ -164,7 +316,7 @@ public class CustomItemMenus {
                         backMeta.setDisplayName(CC.translate("&r← Atrás"));
                         backButton.setItemMeta(backMeta);
                         contents.set(4, 8, ClickableItem.of(backButton, e -> {
-                            createMainMenu().open(player);
+                            openCategoryMenu(1).open(player);
                         }));
                     }
 
@@ -177,6 +329,10 @@ public class CustomItemMenus {
     }
 
     public static SmartInventory openEditItemMenu(String itemId) {
+        return openEditItemMenu(itemId, null);
+    }
+
+    public static SmartInventory openEditItemMenu(String itemId, String category) {
         CustomItem item = CustomItemCommand.items.get(itemId);
         if (item == null) return null;
 
@@ -197,7 +353,10 @@ public class CustomItemMenus {
                         infoLore.add(CC.translate("&7Estado: &f" + (item.isActive() ? "Activo" : "Inactivo")));
                         infoMeta.setLore(infoLore);
                         infoItem.setItemMeta(infoMeta);
-                        contents.set(1, 1, ClickableItem.empty(infoItem));
+                        contents.set(1, 1, ClickableItem.of(infoItem, e -> {
+                            player.closeInventory();
+                            CustomIdChangeManager.startIdChange(player, itemId, "item");
+                        }));
 
                         ItemStack renameButton = new ItemStack(Material.NAME_TAG);
                         ItemMeta renameMeta = renameButton.getItemMeta();
@@ -261,14 +420,30 @@ public class CustomItemMenus {
                             CustomItemEffectsMenu.createEffectSelectionMenu(itemId).open(player);
                         }));
 
+                        ItemStack categoryButton = new ItemStack(Material.CHEST);
+                        ItemMeta categoryMeta = categoryButton.getItemMeta();
+                        categoryMeta.setDisplayName(CC.translate("&d&lCategoría"));
+                        List<String> categoryLore = new ArrayList<>();
+                        categoryLore.add(CC.translate("&7Actual: &f" + (item.getCategory() != null ? item.getCategory() : "Sin categoría")));
+                        categoryLore.add("");
+                        categoryLore.add(CC.translate("&a[CLICK PARA CAMBIAR]"));
+                        categoryMeta.setLore(categoryLore);
+                        categoryButton.setItemMeta(categoryMeta);
+                        contents.set(1, 6, ClickableItem.of(categoryButton, e -> {
+                            player.closeInventory();
+                            CategoryInputManager.startCategoryChange(player, itemId);
+                        }));
+
                         ItemStack durabilityButton = new ItemStack(Material.DIAMOND_PICKAXE);
                         ItemMeta durabilityMeta = durabilityButton.getItemMeta();
                         durabilityMeta.setDisplayName(CC.translate("&d&lDurabilidad"));
-                        durabilityMeta.setLore(Arrays.asList(
-                                CC.translate("&7Modifica la durabilidad del item"),
-                                "",
-                                CC.translate("&a[CLICK PARA CONFIGURAR]")
-                        ));
+                        List<String> durabilityLore = new ArrayList<>();
+                        durabilityLore.add(CC.translate("&7Modifica la durabilidad del item"));
+                        durabilityLore.add("");
+                        durabilityLore.add(CC.translate("&7Actual: &f" + (item.getMaxDurability() > 0 ? item.getMaxDurability() : "Sin configurar")));
+                        durabilityLore.add("");
+                        durabilityLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        durabilityMeta.setLore(durabilityLore);
                         durabilityButton.setItemMeta(durabilityMeta);
                         contents.set(2, 1, ClickableItem.of(durabilityButton, e -> {
                             DurabilityInputManager.startDurabilityInput(player, itemId, "item");
@@ -297,7 +472,7 @@ public class CustomItemMenus {
                             item.setUnbreakable(newState);
                             applyUnbreakableToNbt(item, newState);
 
-                            CustomItemStorage storage = new CustomItemStorage();
+                            CustomItemStorage storage = CustomItemStorage.getInstance();
                             storage.saveItem(item);
 
                             player.sendMessage("");
@@ -350,7 +525,7 @@ public class CustomItemMenus {
 
                         ItemStack changeIdButton = new ItemStack(Material.NAME_TAG);
                         ItemMeta changeIdMeta = changeIdButton.getItemMeta();
-                        changeIdMeta.setDisplayName(CC.translate("&b&lCambiar ID/Material"));
+                        changeIdMeta.setDisplayName(CC.translate("&b&lCambiar Material"));
                         List<String> changeIdLore = new ArrayList<>();
                         changeIdLore.add(CC.translate("&7Material actual: &f" + item.getMaterial() +
                                 (item.getDurabilityData() > 0 ? "/" + item.getDurabilityData() : "")));
@@ -396,7 +571,11 @@ public class CustomItemMenus {
                         backMeta.setDisplayName(CC.translate("&b← Atrás"));
                         backButton.setItemMeta(backMeta);
                         contents.set(3, 4, ClickableItem.of(backButton, e -> {
-                            openItemListMenu(1).open(player);
+                            if (category != null) {
+                                openItemListMenu(1, category).open(player);
+                            } else {
+                                openCategoryMenu(1).open(player);
+                            }
                         }));
                     }
 
@@ -447,10 +626,9 @@ public class CustomItemMenus {
                         yesButton.setItemMeta(yesMeta);
                         contents.set(2, 3, ClickableItem.of(yesButton, e -> {
                             CustomItemCommand.items.remove(itemId);
-                            org.debentialc.customitems.tools.storage.CustomItemStorage storage = new org.debentialc.customitems.tools.storage.CustomItemStorage();
-                            storage.deleteItem(itemId);
+                            org.debentialc.customitems.tools.storage.CustomItemStorage.getInstance().deleteItem(itemId);
                             player.sendMessage(CC.translate("&a✓ Item eliminado correctamente"));
-                            openItemListMenu(1).open(player);
+                            openCategoryMenu(1).open(player);
                         }));
 
                         ItemStack noButton = new ItemStack(Material.REDSTONE_BLOCK);
@@ -547,5 +725,10 @@ public class CustomItemMenus {
         glassMeta.setDisplayName(CC.translate("&8"));
         glass.setItemMeta(glassMeta);
         return glass;
+    }
+
+    private static String capitalize(String text) {
+        if (text == null || text.isEmpty()) return text;
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1).toLowerCase();
     }
 }

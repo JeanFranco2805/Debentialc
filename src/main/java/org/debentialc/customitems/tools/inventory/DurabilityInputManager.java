@@ -102,8 +102,7 @@ public class DurabilityInputManager {
         // Guardar durabilidad máxima en el objeto CustomItem
         item.setMaxDurability(durability);
 
-        org.debentialc.customitems.tools.storage.CustomItemStorage storage = new org.debentialc.customitems.tools.storage.CustomItemStorage();
-        storage.saveItem(item);
+        org.debentialc.customitems.tools.storage.CustomItemStorage.getInstance().saveItem(item);
 
         player.sendMessage(CC.translate("&7Nota: La durabilidad se aplicará cuando"));
         player.sendMessage(CC.translate("&7se entregue el item al jugador"));
@@ -123,7 +122,7 @@ public class DurabilityInputManager {
         // Guardar durabilidad máxima en el objeto CustomArmor
         armor.setMaxDurability(durability);
 
-        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
         storage.saveArmor(armor);
 
         RegisterItem.items.put(armorId, armor);

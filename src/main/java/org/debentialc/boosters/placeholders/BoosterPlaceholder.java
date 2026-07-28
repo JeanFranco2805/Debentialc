@@ -94,16 +94,15 @@ public class BoosterPlaceholder extends PlaceholderExpansion {
                 if (player == null) return "§cInactivo";
                 PersonalBooster ptime = PersonalBoosterManager.getActiveBooster(player.getUniqueId());
                 if (ptime != null) {
-                    long remaining = ptime.getActivationTimeRemaining(
-                            BoosterSettings.getPersonalBoosterDuration()
-                    );
+                    long remaining = ptime.getActivationTimeRemaining();
+                    if (remaining < 0) return "§6∞";
                     return remaining > 0 ? formatTime(remaining) : "§cExpirado";
                 }
                 return "§cInactivo";
 
             case "personal_count":
                 if (player == null) return "§60";
-                int count = PersonalBoosterManager.getPlayerBoosters(player.getUniqueId()).size();
+                int count = PersonalBoosterManager.hasActiveBooster(player.getUniqueId()) ? 1 : 0;
                 return "§6" + count;
 
             case "combined_multiplier":

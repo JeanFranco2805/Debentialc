@@ -10,22 +10,21 @@ import java.util.List;
 @Setter
 public class RebirthBlock {
 
-    private int id;
+    private String id;
     private String name;
-    private boolean saveLevel;
+    private boolean vip = false;
+    private String requiredPermission;
     private List<Integer> rebirthIds;
 
-    public RebirthBlock(int id) {
+    public RebirthBlock(String id) {
         this.id = id;
         this.name = "Bloque " + id;
-        this.saveLevel = false;
         this.rebirthIds = new ArrayList<>();
     }
 
-    public RebirthBlock(int id, String name, boolean saveLevel, List<Integer> rebirthIds) {
+    public RebirthBlock(String id, String name, List<Integer> rebirthIds) {
         this.id = id;
         this.name = name;
-        this.saveLevel = saveLevel;
         this.rebirthIds = rebirthIds != null ? rebirthIds : new ArrayList<>();
     }
 

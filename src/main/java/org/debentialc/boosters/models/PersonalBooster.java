@@ -6,59 +6,39 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class PersonalBooster implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private UUID playerId;
-    private int level;
     private double multiplier;
     private Instant activationTime;
     private boolean active;
-    private Instant creationTime;
+    private long durationSeconds;
 
     public PersonalBooster() {
         this.active = false;
+        this.durationSeconds = 0;
     }
 
-    public PersonalBooster(UUID playerId, int level, double multiplier) {
+    public PersonalBooster(UUID playerId, double multiplier, long durationSeconds) {
         this.playerId = playerId;
-        this.level = level;
         this.multiplier = multiplier;
-        this.creationTime = Instant.now();
-        this.active = false;
-    }
-
-    public void activate(long durationSeconds) {
-        this.active = true;
+        this.durationSeconds = durationSeconds;
         this.activationTime = Instant.now();
+        this.active = true;
     }
 
-    public void deactivate() {
-        this.active = false;
-    }
-
-    public boolean isStillActive(long durationSeconds) {
+    public boolean isStillActive() {
         if (!active || activationTime == null) return false;
+        if (durationSeconds <= 0) return true;
         Duration elapsed = Duration.between(activationTime, Instant.now());
         return elapsed.getSeconds() < durationSeconds;
     }
 
-    public long getActivationTimeRemaining(long durationSeconds) {
+    public long getActivationTimeRemaining() {
         if (!active || activationTime == null) return 0;
+        if (durationSeconds <= 0) return -1;
         Duration elapsed = Duration.between(activationTime, Instant.now());
         long remaining = durationSeconds - elapsed.getSeconds();
-        return Math.max(0, remaining);
-    }
-
-    public boolean hasExpiredFromStorage(long storageDays) {
-        if (creationTime == null) return true;
-        Duration age = Duration.between(creationTime, Instant.now());
-        return age.toDays() >= storageDays;
-    }
-
-    public long getStorageTimeRemaining(long storageDays) {
-        if (creationTime == null) return 0;
-        Duration age = Duration.between(creationTime, Instant.now());
-        long remaining = (storageDays * 86400) - age.getSeconds();
         return Math.max(0, remaining);
     }
 
@@ -67,14 +47,7 @@ public class PersonalBooster implements Serializable {
     }
 
     public String getLevelName() {
-        switch (level) {
-            case 1: return "Minor";
-            case 2: return "Standard";
-            case 3: return "Powerful";
-            case 4: return "Extreme";
-            case 5: return "Ultimate";
-            default: return "Unknown";
-        }
+        return "Personal";
     }
 
     public UUID getPlayerId() {
@@ -83,14 +56,6 @@ public class PersonalBooster implements Serializable {
 
     public void setPlayerId(UUID playerId) {
         this.playerId = playerId;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public void setLevel(int level) {
-        this.level = level;
     }
 
     public double getMultiplier() {
@@ -117,11 +82,11 @@ public class PersonalBooster implements Serializable {
         this.active = active;
     }
 
-    public Instant getCreationTime() {
-        return creationTime;
+    public long getDurationSeconds() {
+        return durationSeconds;
     }
 
-    public void setCreationTime(Instant creationTime) {
-        this.creationTime = creationTime;
+    public void setDurationSeconds(long durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 }

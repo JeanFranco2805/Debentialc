@@ -77,7 +77,7 @@ public class ItemTPInputManager {
         CustomItem item = CustomItemCommand.items.get(state.itemId);
         item.setTpValue(tpValue);
 
-        CustomItemStorage storage = new CustomItemStorage();
+        CustomItemStorage storage = CustomItemStorage.getInstance();
         storage.saveItem(item);
 
         player.sendMessage("");

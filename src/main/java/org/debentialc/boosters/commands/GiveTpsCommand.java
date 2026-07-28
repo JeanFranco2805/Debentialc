@@ -18,18 +18,14 @@ public class GiveTpsCommand extends BaseCommand {
     @Command(aliases = "dartps", inGameOnly = false, permission = "debentialc.dartps", name = "dartps")
     @Override
     public void onCommand(CommandArgs command) throws IOException {
-        if (!(command.getSender() instanceof Player)) {
-            String targetName = command.getArgs(0);
-            Player target = Main.instance.getServer().getPlayer(targetName);
-            if (target == null) {
-                command.getSender().sendMessage(CC.translate("&cJugador no encontrado: " + targetName));
-                return;
-            }
-            applyBoosterAndGiveTPs(command.getSender(), target, Integer.parseInt(command.getArgs(1)));
+        String targetName = command.getArgs(0);
+        Player target = Main.instance.getServer().getPlayer(targetName);
+        if (target == null) {
+            command.getSender().sendMessage(CC.translate("&cJugador no encontrado: " + targetName));
             return;
         }
-        Player player = Main.instance.getServer().getPlayer(command.getArgs(0));
-        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
-        idbcPlayer.setTP(idbcPlayer.getTP() + Integer.parseInt(command.getArgs(1)));
+        int baseTPs = Integer.parseInt(command.getArgs(1));
+        String trainingId = command.length() >= 3 ? command.getArgs(2) : null;
+        applyBoosterAndGiveTPs(command.getSender(), target, baseTPs, trainingId);
     }
 }

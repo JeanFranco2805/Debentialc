@@ -66,7 +66,7 @@ public class ItemEditManager {
         }
 
         CustomItem item = CustomItemCommand.items.get(state.itemId);
-        CustomItemStorage storage = new CustomItemStorage();
+        CustomItemStorage storage = CustomItemStorage.getInstance();
 
         String editTypeLower = state.editType.toLowerCase();
         if ("rename".equals(editTypeLower)) {
@@ -131,57 +131,28 @@ public class ItemEditManager {
         }
 
         CustomItem customItem = CustomItemCommand.items.get(itemId);
-
-        ItemStack itemStack = new ItemStack(customItem.getMaterial(), 1, customItem.getDurabilityData());
-
-        if (customItem.getNbtData() != null && !customItem.getNbtData().isEmpty()) {
-            NbtHandler nbt = new NbtHandler(itemStack);
-            nbt.setCompoundFromString(customItem.getNbtData());
-            itemStack = nbt.getItemStack();
+        ItemStack itemStack = CustomItemCommand.buildItemStack(customItem);
+        if (itemStack == null) {
+            player.sendMessage("");
+            player.sendMessage(CC.translate("&c✗ Error al crear el item. Revisa su configuración."));
+            player.sendMessage("");
+            return;
         }
 
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta != null) {
-            if (customItem.getDisplayName() != null) {
-                meta.setDisplayName(customItem.getDisplayName());
+        java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
+        if (!leftover.isEmpty()) {
+            org.bukkit.Location loc = player.getLocation();
+            for (ItemStack drop : leftover.values()) {
+                player.getWorld().dropItemNaturally(loc, drop);
             }
-            if (customItem.getLore() != null) {
-                meta.setLore(customItem.getLore());
-            }
-            itemStack.setItemMeta(meta);
-        }
-
-        if (customItem.isUnbreakable() && (customItem.getNbtData() == null || customItem.getNbtData().isEmpty())) {
-            NbtHandler nbt = new NbtHandler(itemStack);
-            nbt.setBoolean("Unbreakable", true);
-            itemStack = nbt.getItemStack();
-            if (meta != null && customItem.getDisplayName() != null) {
-                ItemMeta newMeta = itemStack.getItemMeta();
-                if (newMeta != null) {
-                    newMeta.setDisplayName(customItem.getDisplayName());
-                    if (customItem.getLore() != null) newMeta.setLore(customItem.getLore());
-                    itemStack.setItemMeta(newMeta);
-                }
-            }
-        }
-
-        if (customItem.getMaxDurability() > 0) {
-            org.debentialc.customitems.tools.durability.CustomDurabilityManager
-                    .setCustomMaxDurability(itemStack, customItem.getMaxDurability());
-            org.debentialc.customitems.tools.durability.CustomDurabilityManager
-                    .syncVisualDurabilityForModItem(itemStack, customItem.getMaxDurability(), customItem.getMaxDurability());
-        }
-
-        if (player.getInventory().firstEmpty() == -1) {
-            player.getWorld().dropItem(player.getLocation(), itemStack);
             player.sendMessage("");
             player.sendMessage(CC.translate("&a✓ Item entregado (soltado)"));
             player.sendMessage("");
         } else {
-            player.getInventory().addItem(itemStack);
             player.sendMessage("");
             player.sendMessage(CC.translate("&a✓ Item entregado"));
             player.sendMessage("");
         }
+        player.updateInventory();
     }
 }

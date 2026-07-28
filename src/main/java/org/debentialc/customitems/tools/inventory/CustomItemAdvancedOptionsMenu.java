@@ -69,7 +69,7 @@ public class CustomItemAdvancedOptionsMenu {
                             item.setConsumable(!item.isConsumable());
 
                             // Guardar
-                            CustomItemStorage storage = new CustomItemStorage();
+                            CustomItemStorage storage = CustomItemStorage.getInstance();
                             storage.saveItem(item);
 
                             // Mensaje
@@ -83,6 +83,29 @@ public class CustomItemAdvancedOptionsMenu {
 
                             // Reabrir menú
                             createAdvancedOptionsMenu(itemId).open(player);
+                        }));
+
+                        // COOLDOWN
+                        ItemStack cooldownButton = new ItemStack(Material.WATCH);
+                        ItemMeta cooldownMeta = cooldownButton.getItemMeta();
+                        cooldownMeta.setDisplayName(CC.translate("&6&lCooldown"));
+                        List<String> cooldownLore = new ArrayList<>();
+                        cooldownLore.add(CC.translate("&7Tiempo de espera entre usos"));
+                        cooldownLore.add(CC.translate("&7Solo aplica si el item es consumible"));
+                        cooldownLore.add("");
+                        if (item.getCooldownSeconds() > 0) {
+                            cooldownLore.add(CC.translate("&7Actual: &f" + org.debentialc.boosters.core.BoosterParser.formatSecondsToTime(item.getCooldownSeconds())));
+                        } else {
+                            cooldownLore.add(CC.translate("&cSin cooldown"));
+                        }
+                        cooldownLore.add("");
+                        cooldownLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        cooldownLore.add(CC.translate("&7Formato: 50m, 1h, 2d, 30s"));
+                        cooldownMeta.setLore(cooldownLore);
+                        cooldownButton.setItemMeta(cooldownMeta);
+                        contents.set(2, 2, ClickableItem.of(cooldownButton, e -> {
+                            player.closeInventory();
+                            ItemCooldownInputManager.startCooldownInput(player, itemId);
                         }));
 
                         // COMANDOS
@@ -150,6 +173,53 @@ public class CustomItemAdvancedOptionsMenu {
                         scriptsButton.setItemMeta(scriptsMeta);
                         contents.set(2, 7, ClickableItem.of(scriptsButton, e -> {
                             org.debentialc.customitems.tools.inventory.ScriptManagementMenu.createScriptMenu(itemId).open(player);
+                        }));
+
+                        // REBIRTH
+                        ItemStack rebirthButton = new ItemStack(Material.ENDER_PEARL);
+                        ItemMeta rebirthMeta = rebirthButton.getItemMeta();
+                        rebirthMeta.setDisplayName(CC.translate("&5&lRebirth Requerido"));
+                        List<String> rebirthLore = new ArrayList<>();
+                        rebirthLore.add(CC.translate("&7Restringe el uso/recogida del item"));
+                        rebirthLore.add(CC.translate("&7según el progreso de rebirth."));
+                        rebirthLore.add("");
+                        if (item.getRequiredRebirthBlock() != null && !item.getRequiredRebirthBlock().isEmpty() && item.getRequiredRebirthLevel() > 0) {
+                            rebirthLore.add(CC.translate("&7Bloque: &f" + item.getRequiredRebirthBlock()));
+                            rebirthLore.add(CC.translate("&7Nivel local: &f" + item.getRequiredRebirthLevel()));
+                        } else {
+                            rebirthLore.add(CC.translate("&cSin requisito de rebirth"));
+                        }
+                        rebirthLore.add("");
+                        rebirthLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        rebirthLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
+                        rebirthMeta.setLore(rebirthLore);
+                        rebirthButton.setItemMeta(rebirthMeta);
+                        contents.set(3, 2, ClickableItem.of(rebirthButton, e -> {
+                            player.closeInventory();
+                            CustomRequirementInputManager.startRebirthBlockInput(player, "item", itemId);
+                        }));
+
+                        // PERMISO
+                        ItemStack permButton = new ItemStack(Material.TRIPWIRE_HOOK);
+                        ItemMeta permMeta = permButton.getItemMeta();
+                        permMeta.setDisplayName(CC.translate("&c&lPermiso Requerido"));
+                        List<String> permLore = new ArrayList<>();
+                        permLore.add(CC.translate("&7Restringe el uso/recogida del item"));
+                        permLore.add(CC.translate("&7a jugadores con un permiso."));
+                        permLore.add("");
+                        if (item.getRequiredPermission() != null && !item.getRequiredPermission().isEmpty()) {
+                            permLore.add(CC.translate("&7Permiso: &f" + item.getRequiredPermission()));
+                        } else {
+                            permLore.add(CC.translate("&cSin permiso requerido"));
+                        }
+                        permLore.add("");
+                        permLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        permLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
+                        permMeta.setLore(permLore);
+                        permButton.setItemMeta(permMeta);
+                        contents.set(3, 6, ClickableItem.of(permButton, e -> {
+                            player.closeInventory();
+                            CustomRequirementInputManager.startPermissionInput(player, "item", itemId);
                         }));
 
                         // BOTÓN ATRÁS
@@ -241,7 +311,7 @@ public class CustomItemAdvancedOptionsMenu {
                                     item.getCommands().remove(index);
 
                                     // Guardar
-                                    CustomItemStorage storage = new CustomItemStorage();
+                                    CustomItemStorage storage = CustomItemStorage.getInstance();
                                     storage.saveItem(item);
 
                                     player.sendMessage("");
@@ -350,7 +420,7 @@ public class CustomItemAdvancedOptionsMenu {
                             item.setTpConsumeStack(!item.isTpConsumeStack());
 
                             // Guardar
-                            CustomItemStorage storage = new CustomItemStorage();
+                            CustomItemStorage storage = CustomItemStorage.getInstance();
                             storage.saveItem(item);
 
                             // Mensaje

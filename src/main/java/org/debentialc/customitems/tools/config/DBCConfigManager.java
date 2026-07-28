@@ -44,11 +44,12 @@ public class DBCConfigManager {
                 double body = extractMultiplier(content, raceName, dbcClass, "Body");
                 double energyPool = extractMultiplier(content, raceName, dbcClass, "EnergyPool");
                 double stamina = extractMultiplier(content, raceName, dbcClass, "Stamina");
-
+                double melee = extractMultiplier(content, raceName, dbcClass, "Melee");
                 Map<String, Double> classConfig = new HashMap<>();
                 classConfig.put("Body", body);
                 classConfig.put("EnergyPool", energyPool);
                 classConfig.put("Stamina", stamina);
+                classConfig.put("Melee", melee);
 
                 configCache.put(key, classConfig);
 
@@ -104,7 +105,11 @@ public class DBCConfigManager {
         Map<String, Double> config = configCache.getOrDefault(key, new HashMap<>());
         return config.getOrDefault("EnergyPool", 40.0);
     }
-
+    public static double getMeleeMultiplier(String race, String dbcClass) {
+        String key = race.toLowerCase() + "_" + dbcClass;
+        Map<String, Double> config = configCache.getOrDefault(key, new HashMap<>());
+        return config.getOrDefault("Melee", 1.0);
+    }
     public static double getStaminaMultiplier(String race, String dbcClass) {
         String key = race.toLowerCase() + "_" + dbcClass;
         Map<String, Double> config = configCache.getOrDefault(key, new HashMap<>());

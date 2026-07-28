@@ -5,6 +5,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomArmor;
+import org.debentialc.customitems.tools.nbt.NbtHandler;
 import org.debentialc.service.commands.BaseCommand;
 import org.debentialc.service.commands.Command;
 import org.debentialc.service.commands.CommandArgs;
@@ -219,14 +220,15 @@ public class RegisterItem extends BaseCommand {
 
     public boolean isCustom(ItemStack item) {
         if (item == null || item.getTypeId() == 0) return false;
+        NbtHandler nbt = new NbtHandler(item);
+        if (nbt.hasNBT() && nbt.hasKey("debentialc_id") && "armor".equals(nbt.getString("debentialc_type"))) {
+            return items.containsKey(nbt.getString("debentialc_id"));
+        }
         if (!item.hasItemMeta()) return false;
-
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
-
         if (!meta.hasLore() || meta.getLore() == null) return false;
         if (!meta.hasDisplayName() || meta.getDisplayName() == null) return false;
-
         return items.containsValue(
                 new CustomArmor()
                         .setMaterial(item.getTypeId())
@@ -281,10 +283,15 @@ public class RegisterItem extends BaseCommand {
     public CustomArmor toItemCustom(ItemStack itemStack) {
         if (itemStack == null || itemStack.getItemMeta() == null) return null;
 
+        NbtHandler nbt = new NbtHandler(itemStack);
+        if (nbt.hasNBT() && nbt.hasKey("debentialc_id") && "armor".equals(nbt.getString("debentialc_type"))) {
+            CustomArmor byId = items.get(nbt.getString("debentialc_id"));
+            if (byId != null) return byId;
+        }
+
         return items.values().stream()
                 .filter(armor -> armor.matchesItem(itemStack))
                 .findFirst()
                 .orElse(null);
     }
-
 }

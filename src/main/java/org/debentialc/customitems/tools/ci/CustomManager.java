@@ -11,6 +11,7 @@ import org.debentialc.customitems.commands.CustomItemCommand;
 import org.debentialc.customitems.commands.RegisterItem;
 import org.debentialc.service.CC;
 import org.debentialc.service.General;
+import org.debentialc.service.ServerUtil;
 import org.debentialc.customitems.tools.stats.StatsCalculator;
 
 import java.util.*;
@@ -95,7 +96,8 @@ public class CustomManager {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player onlinePlayer : Main.instance.getServer().getOnlinePlayers()) {
+                Player[] players = ServerUtil.getOnlinePlayers();
+                for (Player onlinePlayer : players) {
                     for (ItemStack armorContent : onlinePlayer.getInventory().getArmorContents()) {
                         if (armorContent == null || armorContent.getTypeId() == Material.AIR.getId()) continue;
 
@@ -131,8 +133,7 @@ public class CustomManager {
         org.debentialc.customitems.tools.ci.CustomItem item = CustomItemCommand.items.get(itemId);
         item.getEffects().put(effectType, value);
 
-        org.debentialc.customitems.tools.storage.CustomItemStorage storage = new org.debentialc.customitems.tools.storage.CustomItemStorage();
-        storage.saveItem(item);
+        org.debentialc.customitems.tools.storage.CustomItemStorage.getInstance().saveItem(item);
     }
 
     public static void applyEffectToArmorFromChat(org.bukkit.entity.Player player, String armorId,
@@ -145,7 +146,7 @@ public class CustomManager {
         org.debentialc.customitems.tools.ci.CustomArmor armor = RegisterItem.items.get(armorId);
         armor.getEffects().put(effectType, value);
 
-        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
         storage.saveArmor(armor);
 
         RegisterItem.items.put(armorId, armor);
@@ -161,8 +162,7 @@ public class CustomManager {
         org.debentialc.customitems.tools.ci.CustomItem item = CustomItemCommand.items.get(itemId);
         item.setOperation(operation, stat).setBonusStat(stat, value);
 
-        org.debentialc.customitems.tools.storage.CustomItemStorage storage = new org.debentialc.customitems.tools.storage.CustomItemStorage();
-        storage.saveItem(item);
+        org.debentialc.customitems.tools.storage.CustomItemStorage.getInstance().saveItem(item);
 
         applyHandItemBonus(player);
     }
@@ -177,7 +177,7 @@ public class CustomManager {
         org.debentialc.customitems.tools.ci.CustomArmor armor = RegisterItem.items.get(armorId);
         armor.setOperation(operation, stat).setBonusStat(stat, value);
 
-        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+        org.debentialc.customitems.tools.storage.CustomArmorStorage storage = org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
         storage.saveArmor(armor);
 
         RegisterItem.items.put(armorId, armor);
@@ -225,7 +225,8 @@ public class CustomManager {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player player : Main.instance.getServer().getOnlinePlayers()) {
+                Player[] players = ServerUtil.getOnlinePlayers();
+                for (Player player : players) {
 
                     // BUG 1 FIX: Calcular qué items están actualmente equipados/en mano
                     Set<String> currentItemIds = new HashSet<>();

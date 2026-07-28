@@ -212,8 +212,13 @@ public class CustomArmorMenus {
                         infoLore.add(CC.translate("&7Nombre: &f" + armor.getDisplayName()));
                         infoLore.add(CC.translate("&7Material: &f" + armor.getMaterial()));
                         infoLore.add(CC.translate("&7Estado: &f" + (armor.isArmor() ? "Activa" : "Inactiva")));
+                        infoLore.add("");
+                        infoLore.add(CC.translate("&a[CLICK PARA CAMBIAR ID CUSTOM]"));
                         infoItem.setItemMeta(infoMeta);
-                        contents.set(1, 1, ClickableItem.empty(infoItem));
+                        contents.set(1, 1, ClickableItem.of(infoItem, e -> {
+                            player.closeInventory();
+                            CustomIdChangeManager.startIdChange(player, armorId, "armor");
+                        }));
 
                         // RENOMBRAR
                         ItemStack renameButton = new ItemStack(Material.NAME_TAG);
@@ -302,11 +307,13 @@ public class CustomArmorMenus {
                         ItemStack durabilityButton = new ItemStack(Material.DIAMOND_CHESTPLATE);
                         ItemMeta durabilityMeta = durabilityButton.getItemMeta();
                         durabilityMeta.setDisplayName(CC.translate("&d&lDurabilidad"));
-                        durabilityMeta.setLore(Arrays.asList(
-                                CC.translate("&7Modifica la durabilidad de la armadura"),
-                                "",
-                                CC.translate("&a[CLICK PARA CONFIGURAR]")
-                        ));
+                        List<String> durabilityLore = new ArrayList<>();
+                        durabilityLore.add(CC.translate("&7Modifica la durabilidad de la armadura"));
+                        durabilityLore.add("");
+                        durabilityLore.add(CC.translate("&7Actual: &f" + (armor.getMaxDurability() > 0 ? armor.getMaxDurability() : "Sin configurar")));
+                        durabilityLore.add("");
+                        durabilityLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        durabilityMeta.setLore(durabilityLore);
                         durabilityButton.setItemMeta(durabilityMeta);
                         contents.set(2, 1, ClickableItem.of(durabilityButton, e -> {
                             DurabilityInputManager.startDurabilityInput(player, armorId, "armor");
@@ -315,12 +322,12 @@ public class CustomArmorMenus {
                         // CAMBIAR ID
                         ItemStack changeIdButton = new ItemStack(Material.NAME_TAG);
                         ItemMeta changeIdMeta = changeIdButton.getItemMeta();
-                        changeIdMeta.setDisplayName(CC.translate("&b&lCambiar ID"));
+                        changeIdMeta.setDisplayName(CC.translate("&b&lCambiar Material"));
                         List<String> changeIdLore = new ArrayList<>();
-                        changeIdLore.add(CC.translate("&7ID actual: &f" + armorId));
+                        changeIdLore.add(CC.translate("&7Material actual: &f" + armor.getMaterial()));
                         changeIdLore.add("");
-                        changeIdLore.add(CC.translate("&7Permite cambiar el identificador"));
-                        changeIdLore.add(CC.translate("&7Soporta IDs con tipos: id/tipo"));
+                        changeIdLore.add(CC.translate("&7Permite cambiar el material"));
+                        changeIdLore.add(CC.translate("&7Soporta IDs con data: id/data"));
                         changeIdLore.add("");
                         changeIdLore.add(CC.translate("&a[CLICK PARA CAMBIAR]"));
                         changeIdMeta.setLore(changeIdLore);
@@ -356,7 +363,7 @@ public class CustomArmorMenus {
 
                             // Guardar
                             org.debentialc.customitems.tools.storage.CustomArmorStorage storage =
-                                    new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+                                    org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
                             storage.saveArmor(armor);
 
                             // Actualizar en memoria
@@ -374,6 +381,32 @@ public class CustomArmorMenus {
                             // Reabrir menú
                             openEditArmorMenu(armorId).open(player);
                         }));
+                        // OPCIONES AVANZADAS
+                        ItemStack advancedButton = new ItemStack(Material.NETHER_STAR);
+                        ItemMeta advancedMeta = advancedButton.getItemMeta();
+                        advancedMeta.setDisplayName(CC.translate("&5&l⚙ Opciones Avanzadas"));
+                        List<String> advancedLore = new ArrayList<>();
+                        advancedLore.add(CC.translate("&7Rebirth y permisos"));
+                        advancedLore.add("");
+                        if (armor.getRequiredRebirthBlock() != null && !armor.getRequiredRebirthBlock().isEmpty() && armor.getRequiredRebirthLevel() > 0) {
+                            advancedLore.add(CC.translate("&7Bloque: &f" + armor.getRequiredRebirthBlock()));
+                            advancedLore.add(CC.translate("&7Nivel: &f" + armor.getRequiredRebirthLevel()));
+                        }
+                        if (armor.getRequiredPermission() != null && !armor.getRequiredPermission().isEmpty()) {
+                            advancedLore.add(CC.translate("&7Permiso: &f" + armor.getRequiredPermission()));
+                        }
+                        if ((armor.getRequiredRebirthBlock() == null || armor.getRequiredRebirthBlock().isEmpty() || armor.getRequiredRebirthLevel() <= 0) &&
+                                (armor.getRequiredPermission() == null || armor.getRequiredPermission().isEmpty())) {
+                            advancedLore.add(CC.translate("&cSin requisitos extra"));
+                        }
+                        advancedLore.add("");
+                        advancedLore.add(CC.translate("&a[CLICK PARA ABRIR]"));
+                        advancedMeta.setLore(advancedLore);
+                        advancedButton.setItemMeta(advancedMeta);
+                        contents.set(2, 4, ClickableItem.of(advancedButton, e -> {
+                            CustomArmorAdvancedOptionsMenu.createAdvancedOptionsMenu(armorId).open(player);
+                        }));
+
                         // DAR ARMADURA
                         ItemStack giveButton = new ItemStack(Material.APPLE);
                         ItemMeta giveMeta = giveButton.getItemMeta();
@@ -448,7 +481,7 @@ public class CustomArmorMenus {
                             RegisterItem.items.remove(armorId);
                             // Eliminar de la base de datos (si existe)
                             try {
-                                org.debentialc.customitems.tools.storage.CustomArmorStorage storage = new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+                                org.debentialc.customitems.tools.storage.CustomArmorStorage storage = org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
                                 storage.deleteArmor(armorId);
                             } catch (Exception ex) {
                             }

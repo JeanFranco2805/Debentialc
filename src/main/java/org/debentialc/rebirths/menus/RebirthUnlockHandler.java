@@ -1,5 +1,6 @@
 package org.debentialc.rebirths.menus;
 
+import noppes.npcs.api.entity.IDBCPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
@@ -10,15 +11,14 @@ import org.bukkit.inventory.ItemStack;
 import org.debentialc.Main;
 import org.debentialc.rebirths.managers.RebirthBlockManager;
 import org.debentialc.rebirths.managers.RebirthManager;
-import org.debentialc.rebirths.model.PlayerBlockStats;
 import org.debentialc.rebirths.model.Rebirth;
 import org.debentialc.rebirths.model.RebirthBlock;
 import org.debentialc.service.CC;
+import org.debentialc.service.General;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RebirthUnlockHandler {
 
@@ -28,9 +28,16 @@ public class RebirthUnlockHandler {
             return;
         }
 
-        RebirthManager.getInstance().setPlayerRebirthLevel(player, rebirth.getId());
+        RebirthManager.getInstance().unlockRebirth(player, rebirth.getId());
 
-        applyLevelChange(player, rebirth);
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "jrmca set all 10 " + player.getName());
+
+        // Apply stat bonus one tick later to ensure stat changes have taken effect
+        org.bukkit.Bukkit.getScheduler().runTask(org.debentialc.Main.instance, new Runnable() {
+            public void run() {
+                applyStatBonus(player, rebirth);
+            }
+        });
 
         giveRewardItems(player, rebirth.getRewardItems());
         executeRewardCommands(player, rebirth.getRewardCommands());
@@ -38,50 +45,64 @@ public class RebirthUnlockHandler {
         playUnlockEffects(player);
 
         player.sendMessage("");
-        player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         player.sendMessage(CC.translate("&6&l✨ NUEVO REBIRTH DESBLOQUEADO ✨"));
         player.sendMessage("");
         player.sendMessage(CC.translate("&eHas desbloqueado: &r" + rebirth.getDisplayName()));
         player.sendMessage(CC.translate("&7Bonus de TPs: &f" + rebirth.getTpBonusPercent() + "%"));
-
-        RebirthBlock block = RebirthBlockManager.getInstance().getBlockForRebirth(rebirth.getId());
-        if (block != null && block.isSaveLevel()) {
-            player.sendMessage(CC.translate("&7Tu nivel ha sido preservado en el bloque &e" + block.getName() + "&7."));
-        } else {
-            player.sendMessage(CC.translate("&7Tu nivel ha sido reiniciado."));
-        }
         player.sendMessage("");
-        player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         player.sendMessage("");
 
         Bukkit.broadcastMessage(CC.translate("&6&l[Rebirths] &e" + player.getName() + " &7ha desbloqueado &r" + rebirth.getDisplayName() + "&7!"));
     }
 
-    private static void applyLevelChange(Player player, Rebirth rebirth) {
+    public static void applyStatBonus(Player player, Rebirth rebirth) {
+        double value = rebirth.getStatBonusMultiplier();
+        if (value <= 0) return;
+
+        String operation = rebirth.getStatBonusOperation();
+        if (!"*".equals(operation) && !"+".equals(operation)) return;
+
+        String bonusId = "rebirth_u";
         RebirthBlock block = RebirthBlockManager.getInstance().getBlockForRebirth(rebirth.getId());
+        if (block != null) {
+            bonusId = "rebirth_" + block.getId();
+        }
 
-        if (block != null && block.isSaveLevel()) {
-            PlayerBlockStats savedStats = RebirthBlockManager.getInstance().getPlayerBlockStats(player, block.getId());
-
-            if (savedStats.getStats().isEmpty()) {
-                Map<String, Integer> captured = RebirthBlockManager.getInstance().capturePlayerStats(player);
-                savedStats.setStartRebirthId(block.getId());
-                savedStats.setStats(captured);
-                RebirthBlockManager.getInstance().savePlayerBlockStats(player, block.getId(), savedStats);
-                player.sendMessage(CC.translate("&a✓ Nivel del bloque &e" + block.getName() + " &acapturado."));
+        try {
+            IDBCPlayer idbcPlayer = General.getDBCPlayer(player.getName());
+            String[] stats = {"STR", "DEX", "CON", "SPI", "WIL"};
+            for (String stat : stats) {
+                String bonusStat = General.BONUS_STATS.get(stat);
+                if (bonusStat == null) continue;
+                try {
+                    idbcPlayer.addBonusAttribute(bonusStat, bonusId, operation, value);
+                } catch (Exception e) {
+                    idbcPlayer.setBonusAttribute(bonusStat, bonusId, operation, value);
+                }
             }
-
-            RebirthBlockManager.getInstance().restorePlayerStats(player, savedStats.getStats());
-            player.sendMessage(CC.translate("&a✓ Stats restauradas al nivel del bloque &e" + block.getName()));
-        } else {
-            if (block != null) {
-                RebirthBlockManager.getInstance().clearPlayerBlockStats(player, block.getId());
-            }
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "jrmcrei " + player.getName() + " 0 true true true");
+            player.sendMessage(CC.translate("&7Bonus de stats aplicado (&f" + bonusId + "&7): &f" + operation + " " + value));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    private static void giveRewardItems(Player player, List<ItemStack> items) {
+    public static void removeStatBonus(Player player, String bonusId) {
+        try {
+            IDBCPlayer idbcPlayer = General.getDBCPlayer(player.getName());
+            for (String stat : General.BONUS_STATS.values()) {
+                try {
+                    idbcPlayer.removeBonusAttribute(stat, bonusId);
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void giveRewardItems(Player player, List<ItemStack> items) {
         if (items == null || items.isEmpty()) return;
 
         for (ItemStack item : items) {
@@ -98,7 +119,7 @@ public class RebirthUnlockHandler {
         }
     }
 
-    private static void executeRewardCommands(Player player, List<String> commands) {
+    public static void executeRewardCommands(Player player, List<String> commands) {
         if (commands == null || commands.isEmpty()) return;
 
         for (String command : commands) {

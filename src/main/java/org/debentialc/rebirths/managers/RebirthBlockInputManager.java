@@ -10,15 +10,16 @@ import java.util.UUID;
 public class RebirthBlockInputManager {
 
     public enum InputType {
-        BLOCK_NAME
+        BLOCK_NAME,
+        BLOCK_PERMISSION
     }
 
     public static class InputState {
-        public final int blockId;
+        public final String blockId;
         public final InputType type;
         public final Runnable onComplete;
 
-        public InputState(int blockId, InputType type, Runnable onComplete) {
+        public InputState(String blockId, InputType type, Runnable onComplete) {
             this.blockId = blockId;
             this.type = type;
             this.onComplete = onComplete;
@@ -27,11 +28,11 @@ public class RebirthBlockInputManager {
 
     private static final HashMap<UUID, InputState> playersInputting = new HashMap<>();
 
-    public static void startInput(Player player, int blockId, InputType type) {
+    public static void startInput(Player player, String blockId, InputType type) {
         startInput(player, blockId, type, null);
     }
 
-    public static void startInput(Player player, int blockId, InputType type, Runnable onComplete) {
+    public static void startInput(Player player, String blockId, InputType type, Runnable onComplete) {
         playersInputting.put(player.getUniqueId(), new InputState(blockId, type, onComplete));
         player.closeInventory();
         player.sendMessage("");
@@ -39,6 +40,11 @@ public class RebirthBlockInputManager {
         switch (type) {
             case BLOCK_NAME:
                 player.sendMessage(CC.translate("&3&l Ingresa el nombre del bloque"));
+                break;
+            case BLOCK_PERMISSION:
+                player.sendMessage(CC.translate("&3&l Ingresa el permiso requerido para este bloque"));
+                player.sendMessage(CC.translate("&7 Ejemplo: &fdebentialc.vip.mega"));
+                player.sendMessage(CC.translate("&7 Escribe &c'eliminar' &7para quitar el permiso"));
                 break;
         }
         player.sendMessage(CC.translate("&7 Escribe &c'cancelar' &7para abortar"));
@@ -71,6 +77,9 @@ public class RebirthBlockInputManager {
             case BLOCK_NAME:
                 success = handleBlockName(player, block, input);
                 break;
+            case BLOCK_PERMISSION:
+                success = handleBlockPermission(player, block, input);
+                break;
         }
 
         if (success) {
@@ -89,6 +98,17 @@ public class RebirthBlockInputManager {
         block.setName(input);
         RebirthBlockManager.getInstance().saveBlock(block);
         player.sendMessage(CC.translate("&a✓ Nombre del bloque establecido a &r" + input));
+        return true;
+    }
+
+    private static boolean handleBlockPermission(Player player, RebirthBlock block, String input) {
+        if (input.equalsIgnoreCase("eliminar")) {
+            block.setRequiredPermission(null);
+        } else {
+            block.setRequiredPermission(input);
+        }
+        RebirthBlockManager.getInstance().saveBlock(block);
+        player.sendMessage(CC.translate("&a✓ Permiso del bloque &e" + block.getName() + " &aactualizado."));
         return true;
     }
 

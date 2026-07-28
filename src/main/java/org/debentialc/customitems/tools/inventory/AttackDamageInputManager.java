@@ -84,7 +84,7 @@ public class AttackDamageInputManager {
             rebuildNbtWithDamage(item, damage);
         }
 
-        CustomItemStorage storage = new CustomItemStorage();
+        CustomItemStorage storage = CustomItemStorage.getInstance();
         storage.saveItem(item);
 
         player.sendMessage("");

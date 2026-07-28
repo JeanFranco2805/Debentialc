@@ -52,7 +52,7 @@ public class BoosterUtils {
     }
 
     public static void cleanupExpiredBoosters(UUID playerId) {
-        PersonalBoosterManager.removeExpiredBoosters(playerId);
+        PersonalBoosterManager.getActiveMultiplier(playerId);
     }
 
     public static void cleanupAllExpiredBoosters() {

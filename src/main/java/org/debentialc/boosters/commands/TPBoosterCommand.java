@@ -1,5 +1,7 @@
 package org.debentialc.boosters.commands;
 
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.debentialc.boosters.integration.BoosterTPAPI;
 import org.debentialc.customitems.tools.permissions.Permissions;
@@ -12,18 +14,11 @@ import java.io.IOException;
 
 public class TPBoosterCommand extends BaseCommand {
 
-    @Command(name = "tpbooster", aliases = {"tpboost"}, permission = Permissions.COMMAND + "tpbooster")
+    @Command(name = "tpbooster", aliases = {"tpboost"}, permission = Permissions.COMMAND + "tpbooster", inGameOnly = false)
     @Override
     public void onCommand(CommandArgs command) throws IOException {
-        if (!command.isPlayer()) {
-            command.getSender().sendMessage(CC.translate("&cDebes ser un jugador"));
-            return;
-        }
-
-        Player player = command.getPlayer();
-
         if (command.length() < 1) {
-            sendHelp(player);
+            sendHelp(command.getSender());
             return;
         }
 
@@ -35,44 +30,81 @@ public class TPBoosterCommand extends BaseCommand {
                 break;
 
             case "test":
+                if (!command.isPlayer()) {
+                    command.getSender().sendMessage(CC.translate("&cDebes ser un jugador para usar test"));
+                    return;
+                }
                 handleTest(command);
                 break;
 
             case "info":
+                if (!command.isPlayer()) {
+                    command.getSender().sendMessage(CC.translate("&cDebes ser un jugador para usar info"));
+                    return;
+                }
                 handleInfo(command);
                 break;
 
             case "calculate":
+                if (!command.isPlayer()) {
+                    command.getSender().sendMessage(CC.translate("&cDebes ser un jugador para usar calculate"));
+                    return;
+                }
                 handleCalculate(command);
                 break;
 
             default:
-                player.sendMessage(CC.translate("&cAcción desconocida: " + action));
-                sendHelp(player);
+                command.getSender().sendMessage(CC.translate("&cAcción desconocida: " + action));
+                sendHelp(command.getSender());
                 break;
         }
     }
 
     private void handleGive(CommandArgs command) {
-        Player player = command.getPlayer();
+        Player player;
+        int amountIndex;
 
-        if (command.length() < 2) {
-            player.sendMessage(CC.translate("&cUso: /tpbooster give <cantidad>"));
+        if (command.isPlayer()) {
+            player = command.getPlayer();
+            amountIndex = 1;
+            if (command.length() >= 3) {
+                Player target = Bukkit.getPlayer(command.getArgs(1));
+                if (target != null) {
+                    player = target;
+                    amountIndex = 2;
+                }
+            }
+        } else {
+            if (command.length() < 3) {
+                command.getSender().sendMessage(CC.translate("&cUso desde consola: /tpbooster give <jugador> <cantidad>"));
+                return;
+            }
+            player = Bukkit.getPlayer(command.getArgs(1));
+            amountIndex = 2;
+            if (player == null) {
+                command.getSender().sendMessage(CC.translate("&cJugador no encontrado: &f" + command.getArgs(1)));
+                return;
+            }
+        }
+
+        if (command.length() < amountIndex + 1) {
+            command.getSender().sendMessage(CC.translate("&cUso: /tpbooster give [jugador] <cantidad>"));
             return;
         }
 
         try {
-            int amount = Integer.parseInt(command.getArgs(1));
+            int amount = Integer.parseInt(command.getArgs(amountIndex));
 
             if (amount <= 0) {
-                player.sendMessage(CC.translate("&cLa cantidad debe ser mayor a 0"));
+                command.getSender().sendMessage(CC.translate("&cLa cantidad debe ser mayor a 0"));
                 return;
             }
 
             BoosterTPAPI.giveTPsWithBooster(player, amount);
+            command.getSender().sendMessage(CC.translate("&a✓ Se han dado &6" + amount + " &aTPs con booster a &6" + player.getName()));
 
         } catch (NumberFormatException e) {
-            player.sendMessage(CC.translate("&cCantidad inválida"));
+            command.getSender().sendMessage(CC.translate("&cCantidad inválida"));
         }
     }
 
@@ -149,17 +181,17 @@ public class TPBoosterCommand extends BaseCommand {
         }
     }
 
-    private void sendHelp(Player player) {
-        player.sendMessage(CC.translate("&6=== Boosters de TPs ==="));
-        player.sendMessage("");
-        player.sendMessage(CC.translate("&a/tpbooster give <cantidad>"));
-        player.sendMessage(CC.translate("  &7Da TPs con booster aplicado"));
-        player.sendMessage(CC.translate("&a/tpbooster test"));
-        player.sendMessage(CC.translate("  &7Muestra ejemplos de boosters"));
-        player.sendMessage(CC.translate("&a/tpbooster info"));
-        player.sendMessage(CC.translate("  &7Información de boosters activos"));
-        player.sendMessage(CC.translate("&a/tpbooster calculate <cantidad>"));
-        player.sendMessage(CC.translate("  &7Calcula TPs con booster"));
-        player.sendMessage("");
+    private void sendHelp(CommandSender sender) {
+        sender.sendMessage(CC.translate("&6=== Boosters de TPs ==="));
+        sender.sendMessage("");
+        sender.sendMessage(CC.translate("&a/tpbooster give [jugador] <cantidad>"));
+        sender.sendMessage(CC.translate("  &7Da TPs con booster aplicado"));
+        sender.sendMessage(CC.translate("&a/tpbooster test"));
+        sender.sendMessage(CC.translate("  &7Muestra ejemplos de boosters"));
+        sender.sendMessage(CC.translate("&a/tpbooster info"));
+        sender.sendMessage(CC.translate("  &7Información de boosters activos"));
+        sender.sendMessage(CC.translate("&a/tpbooster calculate <cantidad>"));
+        sender.sendMessage(CC.translate("  &7Calcula TPs con booster"));
+        sender.sendMessage("");
     }
 }

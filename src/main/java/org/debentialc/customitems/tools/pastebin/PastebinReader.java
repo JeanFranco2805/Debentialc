@@ -52,7 +52,12 @@ public class PastebinReader {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        lines.add(CC.translate(line));
+                        line = line.replace("\r", "").trim();
+                        if (line.isEmpty()) {
+                            lines.add("");
+                        } else {
+                            lines.add(CC.translate(line));
+                        }
                     }
                 }
                 return lines;

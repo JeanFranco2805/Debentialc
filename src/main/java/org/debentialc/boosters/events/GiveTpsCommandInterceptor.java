@@ -13,7 +13,9 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.debentialc.Main;
 import org.debentialc.boosters.managers.GlobalBoosterManager;
 import org.debentialc.boosters.managers.PersonalBoosterManager;
+import org.debentialc.rebirths.managers.RebirthManager;
 import org.debentialc.service.CC;
+import org.debentialc.trainings.managers.TrainingManager;
 
 import java.util.Locale;
 
@@ -31,7 +33,7 @@ public class GiveTpsCommandInterceptor implements Listener {
         String[] args = message.split(" ");
 
         if (args.length < 3) {
-            event.getPlayer().sendMessage(CC.translate("&cUso: /dartps <jugador> <cantidad>"));
+            event.getPlayer().sendMessage(CC.translate("&cUso: /dartps <jugador> <cantidad> [trainingId]"));
             event.setCancelled(true);
             return;
         }
@@ -39,6 +41,7 @@ public class GiveTpsCommandInterceptor implements Listener {
         try {
             String targetName = args[1];
             int baseTPs = Integer.parseInt(args[2]);
+            String trainingId = args.length >= 4 ? args[3] : null;
 
             Player target = Main.instance.getServer().getPlayer(targetName);
             if (target == null) {
@@ -48,18 +51,22 @@ public class GiveTpsCommandInterceptor implements Listener {
             }
 
             event.setCancelled(true);
-            applyBoosterAndGiveTPs(event.getPlayer(), target, baseTPs);
+            applyBoosterAndGiveTPs(event.getPlayer(), target, baseTPs, trainingId);
 
         } catch (NumberFormatException e) {
             event.getPlayer().sendMessage(CC.translate("&cCantidad inválida de TPs"));
             event.setCancelled(true);
         } catch (ArrayIndexOutOfBoundsException e) {
-            event.getPlayer().sendMessage(CC.translate("&cUso: /dartps <jugador> <cantidad>"));
+            event.getPlayer().sendMessage(CC.translate("&cUso: /dartps <jugador> <cantidad> [trainingId]"));
             event.setCancelled(true);
         }
     }
 
     public static void applyBoosterAndGiveTPs(CommandSender sender, Player target, int baseTPs) {
+        applyBoosterAndGiveTPs(sender, target, baseTPs, null);
+    }
+
+    public static void applyBoosterAndGiveTPs(CommandSender sender, Player target, int baseTPs, String trainingId) {
         try {
             IDBCPlayer dbcPlayer = NpcAPI.Instance().getPlayer(target.getName()).getDBCPlayer();
             if (dbcPlayer == null) {
@@ -67,17 +74,31 @@ public class GiveTpsCommandInterceptor implements Listener {
                 return;
             }
 
+            double rebirthMultiplier = 1.0;
+            int rebirthLevel = RebirthManager.getInstance().getPlayerRebirthLevel(target);
+            if (rebirthLevel > 0) {
+                rebirthMultiplier = RebirthManager.getInstance().getRebirthMultiplier(target);
+            }
+
+            double trainingMultiplier = 1.0;
+            if (trainingId != null && !trainingId.isEmpty()) {
+                trainingMultiplier = TrainingManager.getInstance().getTrainingMultiplier(target, trainingId);
+            }
+
             double globalMultiplier = GlobalBoosterManager.getCurrentMultiplier();
             double personalMultiplier = PersonalBoosterManager.getActiveMultiplier(target.getUniqueId());
-            double combinedMultiplier = globalMultiplier * personalMultiplier;
+            double combinedMultiplier = rebirthMultiplier * trainingMultiplier * globalMultiplier * personalMultiplier;
 
             int totalTPs = (int) Math.round(baseTPs * combinedMultiplier);
-            int bonusTPs = totalTPs - baseTPs;
+            int rebirthBonus = (int) Math.round(baseTPs * rebirthMultiplier) - baseTPs;
+            int trainingBonus = (int) Math.round(baseTPs * rebirthMultiplier * trainingMultiplier) - (int) Math.round(baseTPs * rebirthMultiplier);
+            int boosterBonus = totalTPs - (int) Math.round(baseTPs * rebirthMultiplier * trainingMultiplier);
 
             int currentTP = dbcPlayer.getTP();
             dbcPlayer.setTP(currentTP + totalTPs);
 
-            sendSuccessMessage(sender, target, baseTPs, bonusTPs, totalTPs, globalMultiplier, personalMultiplier, combinedMultiplier);
+            sendSuccessMessage(sender, target, baseTPs, totalTPs, rebirthBonus, trainingBonus, boosterBonus,
+                    rebirthMultiplier, trainingMultiplier, globalMultiplier, personalMultiplier, trainingId);
 
         } catch (Exception e) {
             sender.sendMessage(CC.translate("&cError al dar TPs: " + e.getMessage()));
@@ -85,54 +106,42 @@ public class GiveTpsCommandInterceptor implements Listener {
         }
     }
 
-    public static void sendSuccessMessage(CommandSender sender, Player target, int baseTPs, int bonusTPs, int totalTPs,
-                                          double globalMult, double personalMult, double combinedMult) {
+    public static void sendSuccessMessage(CommandSender sender, Player target, int baseTPs, int totalTPs,
+                                          int rebirthBonus, int trainingBonus, int boosterBonus,
+                                          double rebirthMult, double trainingMult, double globalMult,
+                                          double personalMult, String trainingId) {
 
-        if (bonusTPs > 0) {
-            sender.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            sender.sendMessage(CC.translate("&a✓ TPs Entregados a &6" + target.getName()));
-            sender.sendMessage("");
-            sender.sendMessage(CC.translate("  &eTPs Base: &a+" + baseTPs));
-            sender.sendMessage(CC.translate("  &eBonus de Booster: &6+" + bonusTPs));
-            sender.sendMessage(CC.translate("  &eTotal Entregado: &b+" + totalTPs + " TPs"));
-            sender.sendMessage("");
+        sender.sendMessage(CC.translate("&a✓ Se han dado &6" + formatTP(totalTPs) + " TPs &aa &6" + target.getName()));
 
-            if (globalMult > 1.0) {
-                String globalPercent = String.format("%.0f%%", (globalMult - 1.0) * 100);
-                sender.sendMessage(CC.translate("  &6⚡ Booster Global: &a+" + globalPercent));
-            }
+        target.sendMessage(CC.translate("&a+" + formatTP(baseTPs)));
 
-            if (personalMult > 1.0) {
-                String personalPercent = String.format("%.0f%%", (personalMult - 1.0) * 100);
-                sender.sendMessage(CC.translate("  &b⚡ Booster Personal: &a+" + personalPercent));
-            }
-
-            String totalPercent = String.format("%.0f%%", (combinedMult - 1.0) * 100);
-            sender.sendMessage(CC.translate("  &a⚡ Multiplicador Total: &6x" + String.format("%.2f", combinedMult) + " &7(+" + totalPercent + ")"));
-            sender.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-
-            target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            target.sendMessage(CC.translate("&6&l⚡ TPS RECIBIDOS ⚡"));
-            target.sendMessage("");
-            target.sendMessage(CC.translate("  &eTPs Base: &a+" + baseTPs));
-            target.sendMessage(CC.translate("  &eBonus: &6+" + bonusTPs + " TPs"));
-            target.sendMessage(CC.translate("  &eTotal: &b+" + totalTPs + " TPs"));
-            target.sendMessage("");
-
-            if (globalMult > 1.0) {
-                String globalPercent = String.format("%.0f%%", (globalMult - 1.0) * 100);
-                target.sendMessage(CC.translate("  &6⚡ Booster Global: &a+" + globalPercent));
-            }
-
-            if (personalMult > 1.0) {
-                String personalPercent = String.format("%.0f%%", (personalMult - 1.0) * 100);
-                target.sendMessage(CC.translate("  &b⚡ Booster Personal: &a+" + personalPercent));
-            }
-            target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-
-        } else {
-            sender.sendMessage(CC.translate("&a✓ Se han dado &6" + String.format(Locale.US, "%,d", totalTPs) + " TPs &aa &6" + target.getName()));
-            target.sendMessage(CC.translate("&8[&c+&8] &c" + String.format(Locale.US, "%,d", totalTPs) + " TPS"));
+        if (rebirthBonus > 0) {
+            sender.sendMessage(CC.translate("&7Bonus de rebirth: &a+" + formatTP(rebirthBonus) + " &7(x" + String.format("%.2f", rebirthMult) + ")"));
+            target.sendMessage(CC.translate("&a+" + formatTP(rebirthBonus) + " &7(Bonus rebirth x" + String.format("%.2f", rebirthMult) + ")"));
         }
+        if (trainingBonus > 0 && trainingId != null) {
+            target.sendMessage(CC.translate("&a+" + formatTP(trainingBonus) + " &7(Bonus " + trainingId + " x" + String.format("%.2f", trainingMult) + ")"));
+        }
+        if (boosterBonus > 0) {
+            String boosterDesc = buildBoosterDesc(globalMult, personalMult);
+            sender.sendMessage(CC.translate("&7Bonus de booster: &a+" + formatTP(boosterBonus) + " &7(" + boosterDesc + ")"));
+            target.sendMessage(CC.translate("&a+" + formatTP(boosterBonus) + " &7(" + boosterDesc + ")"));
+        }
+    }
+
+    private static String formatTP(int amount) {
+        return String.format(Locale.US, "%,d", amount);
+    }
+
+    private static String buildBoosterDesc(double globalMult, double personalMult) {
+        StringBuilder sb = new StringBuilder();
+        if (personalMult > 1.0) {
+            sb.append("Booster personal x").append(String.format("%.2f", personalMult));
+        }
+        if (globalMult > 1.0) {
+            if (sb.length() > 0) sb.append(" / ");
+            sb.append("Booster global x").append(String.format("%.2f", globalMult));
+        }
+        return sb.toString();
     }
 }

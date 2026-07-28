@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public class ItemCreationManager {
     private static final HashMap<UUID, Boolean> playersCreatingItem = new HashMap<>();
-    private static CustomItemStorage itemStorage = new CustomItemStorage();
+    private static CustomItemStorage itemStorage = CustomItemStorage.getInstance();
 
     public static void startItemCreation(Player player) {
         playersCreatingItem.put(player.getUniqueId(), true);

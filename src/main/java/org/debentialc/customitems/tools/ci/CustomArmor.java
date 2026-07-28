@@ -29,6 +29,11 @@ public class CustomArmor {
     // Item irrompible (no recibe daño)
     private boolean unbreakable = false;
 
+    // Rebirth/permission gating
+    private String requiredRebirthBlock = null;
+    private int requiredRebirthLevel = 0;
+    private String requiredPermission = null;
+
     public CustomArmor setMaterial(int material) {
         this.material = material;
         return this;

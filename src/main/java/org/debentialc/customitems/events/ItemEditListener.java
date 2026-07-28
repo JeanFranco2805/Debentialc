@@ -114,6 +114,16 @@ public class ItemEditListener implements Listener {
             return;
         }
 
+        if (ItemCooldownInputManager.isInputtingCooldown(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                ItemCooldownInputManager.cancelCooldownInput(player);
+            } else {
+                ItemCooldownInputManager.processCooldownInput(player, message);
+            }
+            return;
+        }
+
         if (org.debentialc.customitems.tools.scripts.ScriptInputManager.isInputtingScript(player)) {
             event.setCancelled(true);
             if (message.equalsIgnoreCase("cancelar")) {
@@ -130,6 +140,36 @@ public class ItemEditListener implements Listener {
                 ItemIdChangeManager.cancelMaterialIdChange(player);
             } else {
                 ItemIdChangeManager.processMaterialIdChange(player, message);
+            }
+            return;
+        }
+
+        if (CustomIdChangeManager.isChangingId(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                CustomIdChangeManager.cancelIdChange(player);
+            } else {
+                CustomIdChangeManager.processIdChange(player, message);
+            }
+            return;
+        }
+
+        if (CustomRequirementInputManager.isInputtingRequirement(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                CustomRequirementInputManager.cancelRequirementInput(player);
+            } else {
+                CustomRequirementInputManager.processRequirementInput(player, message);
+            }
+            return;
+        }
+
+        if (CategoryInputManager.isChangingCategory(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                CategoryInputManager.cancelCategoryChange(player);
+            } else {
+                CategoryInputManager.processCategoryInput(player, message);
             }
             return;
         }

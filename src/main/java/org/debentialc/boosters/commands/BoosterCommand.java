@@ -1,6 +1,7 @@
 package org.debentialc.boosters.commands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.debentialc.boosters.core.BoosterParser;
 import org.debentialc.boosters.core.BoosterSettings;
@@ -9,24 +10,24 @@ import org.debentialc.boosters.managers.PersonalBoosterManager;
 import org.debentialc.boosters.models.GlobalBooster;
 import org.debentialc.boosters.models.PersonalBooster;
 import org.debentialc.boosters.storage.BoosterStorage;
+import org.debentialc.customitems.tools.permissions.Permissions;
 import org.debentialc.service.CC;
 import org.debentialc.service.commands.BaseCommand;
-import org.debentialc.customitems.tools.permissions.Permissions;
 import org.debentialc.service.commands.Command;
 import org.debentialc.service.commands.CommandArgs;
 
 import java.io.IOException;
-import java.util.List;
 
 public class BoosterCommand extends BaseCommand {
 
-    @Command(name = "booster", aliases = {"booster", "boosters", "boost"}, permission = Permissions.COMMAND + "booster")
+    @Command(name = "booster", aliases = {"booster", "boosters", "boost"}, permission = Permissions.COMMAND + "booster"
+    , inGameOnly = false)
     @Override
     public void onCommand(CommandArgs command) throws IOException {
-        Player player = command.getPlayer();
+        CommandSender sender = command.getSender();
 
         if (command.length() < 1) {
-            sendHelp(player);
+            sendHelp(sender);
             return;
         }
 
@@ -47,28 +48,29 @@ public class BoosterCommand extends BaseCommand {
 
             case "save":
                 BoosterStorage.saveAllData();
-                command.getSender().sendMessage(CC.translate("&aDatos guardados exitosamente"));
+                sender.sendMessage(CC.translate("&a✓ Datos guardados."));
                 break;
 
             case "load":
                 BoosterStorage.loadAllData();
-                command.getSender().sendMessage(CC.translate("&aDatos cargados exitosamente"));
+                sender.sendMessage(CC.translate("&a✓ Datos cargados."));
                 break;
 
             case "help":
-                sendHelp(player);
+                sendHelp(sender);
                 break;
 
             default:
-                command.getSender().sendMessage(CC.translate("&cSubcomando desconocido: " + arg0));
-                sendHelp(player);
+                sender.sendMessage(CC.translate("&cSubcomando desconocido: &f" + arg0));
+                sendHelp(sender);
                 break;
         }
     }
 
     private void handleGlobalCommand(CommandArgs command) {
+        CommandSender sender = command.getSender();
         if (command.length() < 2) {
-            command.getSender().sendMessage(CC.translate("&cUso: /booster global <activate|deactivate|info>"));
+            sender.sendMessage(CC.translate("&cUso: /booster global <activate|deactivate|info>"));
             return;
         }
 
@@ -76,89 +78,72 @@ public class BoosterCommand extends BaseCommand {
 
         switch (action) {
             case "activate":
+            case "activar":
                 if (command.length() < 3) {
-                    command.getSender().sendMessage(CC.translate("&cUso: /booster global activate <porcentaje> [tiempo]"));
-                    command.getSender().sendMessage(CC.translate("&7Ejemplo: /booster global activate 50% 1h"));
-                    command.getSender().sendMessage(CC.translate("&7Ejemplo: /booster global activate 150% 2h30m"));
-                    command.getSender().sendMessage(CC.translate("&7Si no especificas tiempo, usa la duración por defecto"));
+                    sender.sendMessage(CC.translate("&cUso: /booster global activate <porcentaje> [tiempo]"));
+                    sender.sendMessage(CC.translate("&7Ej: /booster global activate 50% 1h"));
                     return;
                 }
 
                 try {
-                    String percentageStr = command.getArgs(2);
-                    double multiplier = BoosterParser.parsePercentageToMultiplier(percentageStr);
-
+                    double multiplier = BoosterParser.parsePercentageToMultiplier(command.getArgs(2));
                     long duration = BoosterSettings.getGlobalBoosterDuration();
-
                     if (command.length() >= 4) {
-                        String timeStr = command.getArgs(3);
-                        duration = BoosterParser.parseTimeToSeconds(timeStr);
+                        duration = BoosterParser.parseTimeToSeconds(command.getArgs(3));
                     }
 
-                    GlobalBoosterManager.activateBooster(multiplier, command.getSender().getName(), duration);
+                    GlobalBoosterManager.activateBooster(multiplier, sender.getName(), duration);
 
-                    String percentDisplay = BoosterParser.formatMultiplierAsPercentage(multiplier);
-                    String timeDisplay = BoosterParser.formatSecondsToTime(duration);
+                    String percent = BoosterParser.formatMultiplierAsPercentage(multiplier);
+                    String time = BoosterParser.formatSecondsToTime(duration);
 
-                    command.getSender().sendMessage(CC.translate("&aBooster global activado:"));
-                    command.getSender().sendMessage(CC.translate("  &6Bonus: &a+" + percentDisplay));
-                    command.getSender().sendMessage(CC.translate("  &6Multiplicador: &ax" + String.format("%.2f", multiplier)));
-                    command.getSender().sendMessage(CC.translate("  &6Duración: &a" + timeDisplay));
-
-                    Bukkit.broadcastMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-                    Bukkit.broadcastMessage(CC.translate("&6&l⚡ BOOSTER GLOBAL ACTIVADO ⚡"));
-                    Bukkit.broadcastMessage("");
-                    Bukkit.broadcastMessage(CC.translate("  &eBono: &a+" + percentDisplay));
-                    Bukkit.broadcastMessage(CC.translate("  &eDuración: &f" + timeDisplay));
-                    Bukkit.broadcastMessage(CC.translate("  &eActivado por: &6" + command.getSender().getName()));
-                    Bukkit.broadcastMessage("");
-                    Bukkit.broadcastMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+                    sender.sendMessage(CC.translate("&a✓ Booster global activado: &6" + percent + " &apor &6" + time));
+                    Bukkit.broadcastMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━"));
+                    Bukkit.broadcastMessage(CC.translate("&6&l⚡ BOOSTER GLOBAL ⚡"));
+                    Bukkit.broadcastMessage(CC.translate("&7Bono: &a" + percent));
+                    Bukkit.broadcastMessage(CC.translate("&7Tiempo: &f" + time));
+                    Bukkit.broadcastMessage(CC.translate("&7Por: &6" + sender.getName()));
+                    Bukkit.broadcastMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━"));
 
                 } catch (IllegalArgumentException e) {
-                    command.getSender().sendMessage(CC.translate("&c✗ Error: " + e.getMessage()));
-                    command.getSender().sendMessage(CC.translate("&7Formato: /booster global activate <porcentaje> [tiempo]"));
-                    command.getSender().sendMessage(CC.translate("&7Ejemplos:"));
-                    command.getSender().sendMessage(CC.translate("&f  /booster global activate 50%"));
-                    command.getSender().sendMessage(CC.translate("&f  /booster global activate 150% 1h"));
-                    command.getSender().sendMessage(CC.translate("&f  /booster global activate 200% 2h30m"));
+                    sender.sendMessage(CC.translate("&c✗ " + e.getMessage()));
                 }
                 break;
 
             case "deactivate":
+            case "desactivar":
                 if (GlobalBoosterManager.isBoosterActive()) {
                     GlobalBoosterManager.deactivateBooster();
-                    command.getSender().sendMessage(CC.translate("&aBooster global desactivado"));
-                    Bukkit.broadcastMessage(CC.translate("&e[BOOSTER] &cBooster Global Desactivado"));
+                    sender.sendMessage(CC.translate("&a✓ Booster global desactivado."));
+                    Bukkit.broadcastMessage(CC.translate("&e[BOOSTER] &cGlobal desactivado"));
                 } else {
-                    command.getSender().sendMessage(CC.translate("&cNo hay booster global activo"));
+                    sender.sendMessage(CC.translate("&cNo hay booster global activo."));
                 }
                 break;
 
             case "info":
             case "multiplier":
-                GlobalBooster booster = GlobalBoosterManager.getActiveBooster();
-                if (booster != null) {
-                    String percentDisplay = BoosterParser.formatMultiplierAsPercentage(booster.getMultiplier());
-
-                    command.getSender().sendMessage(CC.translate("&6=== Booster Global ==="));
-                    command.getSender().sendMessage(CC.translate("&aBono: &6+" + percentDisplay));
-                    command.getSender().sendMessage(CC.translate("&aMultiplicador: &6x" + String.format("%.2f", booster.getMultiplier())));
-                    command.getSender().sendMessage(CC.translate("&aTiempo restante: &6" + booster.getFormattedTime()));
-                    command.getSender().sendMessage(CC.translate("&aActivado por: &6" + booster.getActivatedBy()));
+                GlobalBooster global = GlobalBoosterManager.getActiveBooster();
+                if (global != null) {
+                    sender.sendMessage(CC.translate("&6=== Global ==="));
+                    sender.sendMessage(CC.translate("&7Bono: &a" + BoosterParser.formatMultiplierAsPercentage(global.getMultiplier())));
+                    sender.sendMessage(CC.translate("&7Restante: &6" + global.getFormattedTime()));
+                    sender.sendMessage(CC.translate("&7Por: &6" + global.getActivatedBy()));
                 } else {
-                    command.getSender().sendMessage(CC.translate("&cNo hay booster global activo"));
+                    sender.sendMessage(CC.translate("&cGlobal inactivo."));
                 }
                 break;
 
             default:
-                command.getSender().sendMessage(CC.translate("&cAcción desconocida: " + action));
+                sender.sendMessage(CC.translate("&cAcción desconocida: &f" + action));
                 break;
         }
     }
 
     private void handlePersonalCommand(CommandArgs command) {
+        CommandSender sender = command.getSender();
         if (command.length() < 2) {
-            command.getSender().sendMessage(CC.translate("&cUso: /booster personal <add|activate|list>"));
+            sender.sendMessage(CC.translate("&cUso: /booster personal <add|remove|info>"));
             return;
         }
 
@@ -166,209 +151,128 @@ public class BoosterCommand extends BaseCommand {
 
         switch (action) {
             case "add":
+            case "añadir":
                 if (command.length() < 4) {
-                    command.getSender().sendMessage(CC.translate("&cUso: /booster personal add <jugador> <nivel>"));
-                    command.getSender().sendMessage(CC.translate("&7Niveles: 1-5"));
+                    sender.sendMessage(CC.translate("&cUso: /booster personal add <jugador> <porcentaje> [tiempo]"));
+                    sender.sendMessage(CC.translate("&7Ej: /booster personal add DelawareX 50% 2h"));
                     return;
                 }
 
                 Player target = Bukkit.getPlayer(command.getArgs(2));
                 if (target == null) {
-                    command.getSender().sendMessage(CC.translate("&cJugador no encontrado: " + command.getArgs(2)));
+                    sender.sendMessage(CC.translate("&cJugador no encontrado: &f" + command.getArgs(2)));
                     return;
                 }
 
                 try {
-                    int level = Integer.parseInt(command.getArgs(3));
-
-                    if (level < 1 || level > 5) {
-                        command.getSender().sendMessage(CC.translate("&cNivel debe ser entre 1 y 5"));
-                        return;
+                    double multiplier = BoosterParser.parsePercentageToMultiplier(command.getArgs(3));
+                    long duration = 0;
+                    if (command.length() >= 5) {
+                        duration = BoosterParser.parseTimeToSeconds(command.getArgs(4));
                     }
 
-                    double mult = BoosterSettings.getPersonalBoosterMultiplier(level);
-                    PersonalBooster booster = new PersonalBooster(target.getUniqueId(), level, mult);
-                    PersonalBoosterManager.addBooster(booster);
+                    PersonalBoosterManager.setBooster(target.getUniqueId(), multiplier, duration);
+                    String percent = BoosterParser.formatMultiplierAsPercentage(multiplier);
+                    String time = duration > 0 ? BoosterParser.formatSecondsToTime(duration) : "∞";
 
-                    String percentDisplay = BoosterParser.formatMultiplierAsPercentage(mult);
+                    sender.sendMessage(CC.translate("&a✓ Booster personal &6" + percent + " &aactivado a &6" + target.getName() + " &a(&7" + time + "&a)"));
 
-                    command.getSender().sendMessage(CC.translate("&aBooster nivel &6" + level + " &aañadido a &6" + target.getName()));
-                    command.getSender().sendMessage(CC.translate("  &7Bonus: &a+" + percentDisplay));
+                    target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━"));
+                    target.sendMessage(CC.translate("&b&l⚡ BOOSTER PERSONAL ⚡"));
+                    target.sendMessage(CC.translate("&7Bono de TPs: &a" + percent));
+                    target.sendMessage(CC.translate("&7Duración: &f" + time));
+                    target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━"));
 
-                    target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-                    target.sendMessage(CC.translate("&6&l⚡ BOOSTER RECIBIDO ⚡"));
-                    target.sendMessage("");
-                    target.sendMessage(CC.translate("  &eNivel: &6" + level));
-                    target.sendMessage(CC.translate("  &eBono: &a+" + percentDisplay));
-                    target.sendMessage("");
-                    target.sendMessage(CC.translate("&7Usa &e/booster personal list &7para ver tus boosters"));
-                    target.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-
-                } catch (NumberFormatException e) {
-                    command.getSender().sendMessage(CC.translate("&cNivel inválido"));
+                } catch (IllegalArgumentException e) {
+                    sender.sendMessage(CC.translate("&c✗ " + e.getMessage()));
                 }
                 break;
 
-            case "activate":
-                if (!command.isPlayer()) {
-                    command.getSender().sendMessage(CC.translate("&cDebes ser un jugador"));
-                    return;
-                }
-
-                Player player = command.getPlayer();
-                List<PersonalBooster> boosters = PersonalBoosterManager.getPlayerBoosters(player.getUniqueId());
-
-                if (boosters.isEmpty()) {
-                    player.sendMessage(CC.translate("&cNo tienes boosters personales"));
-                    return;
-                }
-
+            case "remove":
+            case "quitar":
                 if (command.length() < 3) {
-                    player.sendMessage(CC.translate("&cUso: /booster personal activate <índice>"));
-                    listPlayerBoosters(player, boosters);
+                    sender.sendMessage(CC.translate("&cUso: /booster personal remove <jugador>"));
                     return;
                 }
 
-                try {
-                    int index = Integer.parseInt(command.getArgs(2));
+                Player targetRemove = Bukkit.getPlayer(command.getArgs(2));
+                if (targetRemove == null) {
+                    sender.sendMessage(CC.translate("&cJugador no encontrado: &f" + command.getArgs(2)));
+                    return;
+                }
 
-                    if (index < 0 || index >= boosters.size()) {
-                        player.sendMessage(CC.translate("&cÍndice inválido: 0-" + (boosters.size() - 1)));
-                        listPlayerBoosters(player, boosters);
-                        return;
-                    }
-
-                    PersonalBooster boosterToActivate = boosters.get(index);
-                    PersonalBoosterManager.activateBooster(player.getUniqueId(), index);
-
-                    String percentDisplay = BoosterParser.formatMultiplierAsPercentage(boosterToActivate.getMultiplier());
-                    String timeDisplay = BoosterParser.formatSecondsToTime(BoosterSettings.getPersonalBoosterDuration());
-
-                    player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-                    player.sendMessage(CC.translate("&b&l⚡ BOOSTER ACTIVADO ⚡"));
-                    player.sendMessage("");
-                    player.sendMessage(CC.translate("  &eNivel: &6" + boosterToActivate.getLevelName()));
-                    player.sendMessage(CC.translate("  &eBono: &a+" + percentDisplay));
-                    player.sendMessage(CC.translate("  &eDuración: &f" + timeDisplay));
-                    player.sendMessage("");
-                    player.sendMessage(CC.translate("&8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-
-                } catch (NumberFormatException e) {
-                    player.sendMessage(CC.translate("&cÍndice inválido"));
+                if (PersonalBoosterManager.hasActiveBooster(targetRemove.getUniqueId())) {
+                    PersonalBoosterManager.removeBooster(targetRemove.getUniqueId());
+                    sender.sendMessage(CC.translate("&a✓ Booster personal removido de &6" + targetRemove.getName()));
+                    targetRemove.sendMessage(CC.translate("&c✗ Tu booster personal ha sido removido."));
+                } else {
+                    sender.sendMessage(CC.translate("&c" + targetRemove.getName() + " &cno tiene booster personal activo."));
                 }
                 break;
 
-            case "list":
-                if (!command.isPlayer()) {
-                    command.getSender().sendMessage(CC.translate("&cDebes ser un jugador"));
+            case "info":
+                Player targetInfo = null;
+                if (command.length() >= 3) {
+                    targetInfo = Bukkit.getPlayer(command.getArgs(2));
+                } else if (command.isPlayer()) {
+                    targetInfo = command.getPlayer();
+                }
+
+                if (targetInfo == null) {
+                    sender.sendMessage(CC.translate("&cUso: /booster personal info [jugador]"));
                     return;
                 }
 
-                Player player2 = command.getPlayer();
-                List<PersonalBooster> boosters2 = PersonalBoosterManager.getPlayerBoosters(player2.getUniqueId());
-
-                if (boosters2.isEmpty()) {
-                    player2.sendMessage(CC.translate("&cNo tienes boosters personales"));
-                    return;
+                PersonalBooster personal = PersonalBoosterManager.getActiveBooster(targetInfo.getUniqueId());
+                if (personal != null) {
+                    String percent = BoosterParser.formatMultiplierAsPercentage(personal.getMultiplier());
+                    String time = personal.getDurationSeconds() > 0
+                            ? BoosterParser.formatSecondsToTime(personal.getActivationTimeRemaining())
+                            : "∞";
+                    sender.sendMessage(CC.translate("&6=== Personal: &f" + targetInfo.getName() + " &6==="));
+                    sender.sendMessage(CC.translate("&7Bono: &a" + percent));
+                    sender.sendMessage(CC.translate("&7Restante: &f" + time));
+                } else {
+                    sender.sendMessage(CC.translate("&c" + targetInfo.getName() + " &cno tiene booster personal activo."));
                 }
-
-                listPlayerBoosters(player2, boosters2);
                 break;
 
             default:
-                command.getSender().sendMessage(CC.translate("&cAcción desconocida: " + action));
+                sender.sendMessage(CC.translate("&cAcción desconocida: &f" + action));
                 break;
         }
     }
 
-    private void handleConfigCommand(CommandArgs command) {
-        if (!command.isPlayer()) {
-            command.getSender().sendMessage(CC.translate("&cDebes ser un jugador"));
-            return;
-        }}
-
     private void handleInfoCommand(CommandArgs command) {
-        command.getSender().sendMessage(CC.translate("&6=== Información de Boosters ==="));
-        command.getSender().sendMessage("");
+        CommandSender sender = command.getSender();
+        sender.sendMessage(CC.translate("&6=== Boosters ==="));
 
-        command.getSender().sendMessage(CC.translate("&aBooster Global:"));
         GlobalBooster global = GlobalBoosterManager.getActiveBooster();
         if (global != null) {
-            String percentDisplay = BoosterParser.formatMultiplierAsPercentage(global.getMultiplier());
-            command.getSender().sendMessage(CC.translate("  &e- Bono: &a+" + percentDisplay));
-            command.getSender().sendMessage(CC.translate("  &e- Multiplicador: &ax" + String.format("%.2f", global.getMultiplier())));
-            command.getSender().sendMessage(CC.translate("  &e- Tiempo: &6" + global.getFormattedTime()));
-            command.getSender().sendMessage(CC.translate("  &e- Activado por: &6" + global.getActivatedBy()));
+            sender.sendMessage(CC.translate("&7Global: &a" + BoosterParser.formatMultiplierAsPercentage(global.getMultiplier()) + " &7(&f" + global.getFormattedTime() + "&7)"));
         } else {
-            command.getSender().sendMessage(CC.translate("  &cInactivo"));
+            sender.sendMessage(CC.translate("&7Global: &cInactivo"));
         }
-
-        command.getSender().sendMessage("");
 
         if (command.isPlayer()) {
             Player player = command.getPlayer();
-            command.getSender().sendMessage(CC.translate("&aTu Booster Personal:"));
-
             PersonalBooster personal = PersonalBoosterManager.getActiveBooster(player.getUniqueId());
             if (personal != null) {
-                String percentDisplay = BoosterParser.formatMultiplierAsPercentage(personal.getMultiplier());
-                command.getSender().sendMessage(CC.translate("  &e- Nivel: &6" + personal.getLevelName()));
-                command.getSender().sendMessage(CC.translate("  &e- Bono: &a+" + percentDisplay));
-                command.getSender().sendMessage(CC.translate("  &e- Multiplicador: &ax" + String.format("%.2f", personal.getMultiplier())));
+                sender.sendMessage(CC.translate("&7Personal: &a" + BoosterParser.formatMultiplierAsPercentage(personal.getMultiplier())));
             } else {
-                command.getSender().sendMessage(CC.translate("  &cInactivo"));
+                sender.sendMessage(CC.translate("&7Personal: &cInactivo"));
             }
         }
-
-        command.getSender().sendMessage("");
     }
 
-    private void listPlayerBoosters(Player player, List<PersonalBooster> boosters) {
-        player.sendMessage(CC.translate("&6=== Tus Boosters Personales ==="));
-
-        for (int i = 0; i < boosters.size(); i++) {
-            PersonalBooster booster = boosters.get(i);
-            String status = booster.isActive() ? "&aActivo" : "&7Disponible";
-            String percentDisplay = BoosterParser.formatMultiplierAsPercentage(booster.getMultiplier());
-
-            player.sendMessage(CC.translate(String.format("  &6[%d] &e%s &7- &a+%s &7(%s)",
-                    i,
-                    booster.getLevelName(),
-                    percentDisplay,
-                    status)));
-        }
-
-        player.sendMessage("");
-        player.sendMessage(CC.translate("&7Usa &e/booster personal activate <índice> &7para activar"));
-    }
-
-    private void sendHelp(Player player) {
-        player.sendMessage(CC.translate("&6=== Sistema de Boosters ==="));
-        player.sendMessage("");
-
-        player.sendMessage(CC.translate("&e&lBoosters Globales:"));
-        player.sendMessage(CC.translate("&a/booster global activate <porcentaje> [tiempo]"));
-        player.sendMessage(CC.translate("  &7Ejemplo: /booster global activate 50% 1h"));
-        player.sendMessage(CC.translate("  &7Ejemplo: /booster global activate 150% 2h30m"));
-        player.sendMessage(CC.translate("&a/booster global deactivate"));
-        player.sendMessage(CC.translate("&a/booster global info"));
-
-        player.sendMessage("");
-
-        player.sendMessage(CC.translate("&e&lBoosters Personales:"));
-        player.sendMessage(CC.translate("&a/booster personal add <jugador> <nivel>"));
-        player.sendMessage(CC.translate("&a/booster personal activate <índice>"));
-        player.sendMessage(CC.translate("&a/booster personal list"));
-
-        player.sendMessage("");
-
-        player.sendMessage(CC.translate("&e&lOtros:"));
-        player.sendMessage(CC.translate("&a/booster config"));
-        player.sendMessage(CC.translate("&a/booster info"));
-
-        player.sendMessage("");
-
-        player.sendMessage(CC.translate("&7Formatos de tiempo: 1d 2h 30m 45s"));
-        player.sendMessage(CC.translate("&7d=días, h=horas, m=minutos, s=segundos"));
+    private void sendHelp(CommandSender sender) {
+        sender.sendMessage(CC.translate("&6&lBoosters"));
+        sender.sendMessage(CC.translate("&a/booster global activate <porcentaje> [tiempo]"));
+        sender.sendMessage(CC.translate("&a/booster global deactivate"));
+        sender.sendMessage(CC.translate("&a/booster global info"));
+        sender.sendMessage(CC.translate("&a/booster personal add <jugador> <porcentaje> [tiempo]"));
+        sender.sendMessage(CC.translate("&a/booster personal remove <jugador>"));
+        sender.sendMessage(CC.translate("&a/booster personal info [jugador]"));
+        sender.sendMessage(CC.translate("&a/booster info"));
     }
 }

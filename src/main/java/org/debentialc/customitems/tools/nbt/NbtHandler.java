@@ -131,4 +131,24 @@ public class NbtHandler {
     public static NBTTagCompound getCompoundFromString(String sNBT) {
         return (NBTTagCompound) MojangsonParser.parse(sNBT);
     }
+
+    public static String serializeItemStack(ItemStack item) {
+        if (item == null || item.getTypeId() == 0) return null;
+        net.minecraft.server.v1_7_R4.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+        NBTTagCompound compound = new NBTTagCompound();
+        nmsStack.save(compound);
+        return compound.toString();
+    }
+
+    public static ItemStack deserializeItemStack(String nbtString) {
+        if (nbtString == null || nbtString.isEmpty()) return null;
+        try {
+            NBTTagCompound compound = getCompoundFromString(nbtString);
+            net.minecraft.server.v1_7_R4.ItemStack nmsStack = net.minecraft.server.v1_7_R4.ItemStack.createStack(compound);
+            return CraftItemStack.asBukkitCopy(nmsStack);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

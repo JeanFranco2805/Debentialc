@@ -12,6 +12,7 @@ import org.debentialc.boosters.core.BoosterModule;
 import org.debentialc.boosters.managers.GlobalBoosterManager;
 import org.debentialc.boosters.managers.PersonalBoosterManager;
 import org.debentialc.service.CC;
+import org.debentialc.service.ServerUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +27,8 @@ public class TPConsumeListener implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player player : Main.instance.getServer().getOnlinePlayers()) {
+                Player[] players = ServerUtil.getOnlinePlayers();
+                for (Player player : players) {
                     checkTPConsumption(player);
                 }
             }

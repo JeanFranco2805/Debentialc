@@ -11,14 +11,19 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockIterator;
 import org.debentialc.Main;
+import org.debentialc.boosters.core.BoosterParser;
 import org.debentialc.customitems.commands.CustomItemCommand;
 import org.debentialc.customitems.tools.ci.CustomItem;
 import org.debentialc.service.CC;
 import org.debentialc.service.General;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConsumableItemListener implements Listener {
+
+    private static final Map<String, Long> cooldowns = new HashMap<>();
 
     @EventHandler
     public void onItemUse(PlayerInteractEvent event) {
@@ -51,6 +56,18 @@ public class ConsumableItemListener implements Listener {
         }
 
         event.setCancelled(true);
+
+        if (customItem.getCooldownSeconds() > 0) {
+            String key = player.getUniqueId() + ":" + customItem.getId();
+            long now = System.currentTimeMillis();
+            Long expires = cooldowns.get(key);
+            if (expires != null && expires > now) {
+                long remainingSeconds = (expires - now) / 1000L;
+                player.sendMessage(CC.translate("&c✗ Espera &e" + BoosterParser.formatSecondsToTime(remainingSeconds) + " &cpara volver a usar este item."));
+                return;
+            }
+            cooldowns.put(key, now + customItem.getCooldownSeconds() * 1000L);
+        }
 
         if (customItem.getCommands() != null && !customItem.getCommands().isEmpty()) {
             executeCommands(player, customItem.getCommands());

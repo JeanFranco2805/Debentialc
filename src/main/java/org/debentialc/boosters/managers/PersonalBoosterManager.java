@@ -1,63 +1,33 @@
 package org.debentialc.boosters.managers;
 
-import org.debentialc.boosters.core.BoosterSettings;
 import org.debentialc.boosters.models.PersonalBooster;
-import java.util.*;
+
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class PersonalBoosterManager {
 
-    private static final Map<UUID, List<PersonalBooster>> playerBoosters = new ConcurrentHashMap<>();
+    private static final Map<UUID, PersonalBooster> activeBoosters = new ConcurrentHashMap<>();
 
-    public static void addBooster(PersonalBooster booster) {
-        UUID playerId = booster.getPlayerId();
-        playerBoosters.computeIfAbsent(playerId, k -> new ArrayList<>()).add(booster);
+    public static void setBooster(UUID playerId, double multiplier, long durationSeconds) {
+        PersonalBooster booster = new PersonalBooster(playerId, multiplier, durationSeconds);
+        activeBoosters.put(playerId, booster);
     }
 
-    public static void activateBooster(UUID playerId, int index) {
-        List<PersonalBooster> boosters = playerBoosters.get(playerId);
-        if (boosters != null && index >= 0 && index < boosters.size()) {
-            PersonalBooster booster = boosters.get(index);
-            booster.activate(BoosterSettings.getPersonalBoosterDuration());
-        }
+    public static void removeBooster(UUID playerId) {
+        activeBoosters.remove(playerId);
     }
 
     public static PersonalBooster getActiveBooster(UUID playerId) {
-        List<PersonalBooster> boosters = playerBoosters.get(playerId);
-        if (boosters != null) {
-            for (PersonalBooster booster : boosters) {
-                if (booster.isStillActive(BoosterSettings.getPersonalBoosterDuration())) {
-                    return booster;
-                }
-            }
+        PersonalBooster booster = activeBoosters.get(playerId);
+        if (booster != null && booster.isStillActive()) {
+            return booster;
+        }
+        if (booster != null && !booster.isStillActive()) {
+            activeBoosters.remove(playerId);
         }
         return null;
-    }
-
-    public static List<PersonalBooster> getPlayerBoosters(UUID playerId) {
-        return playerBoosters.getOrDefault(playerId, Collections.emptyList());
-    }
-
-    public static void removeExpiredBoosters(UUID playerId) {
-        List<PersonalBooster> boosters = playerBoosters.get(playerId);
-        if (boosters != null) {
-            List<PersonalBooster> active = boosters.stream()
-                    .filter(b -> !b.hasExpiredFromStorage(BoosterSettings.getPersonalBoosterStorageDays()))
-                    .collect(Collectors.toList());
-            if (active.isEmpty()) {
-                playerBoosters.remove(playerId);
-            } else {
-                playerBoosters.put(playerId, active);
-            }
-        }
-    }
-
-    public static void deactivateBooster(UUID playerId) {
-        PersonalBooster active = getActiveBooster(playerId);
-        if (active != null) {
-            active.deactivate();
-        }
     }
 
     public static double getActiveMultiplier(UUID playerId) {
@@ -65,11 +35,15 @@ public class PersonalBoosterManager {
         return (booster != null) ? booster.getMultiplier() : 1.0;
     }
 
+    public static boolean hasActiveBooster(UUID playerId) {
+        return getActiveBooster(playerId) != null;
+    }
+
     public static void clearBoosters(UUID playerId) {
-        playerBoosters.remove(playerId);
+        activeBoosters.remove(playerId);
     }
 
     public static void clearAllBoosters() {
-        playerBoosters.clear();
+        activeBoosters.clear();
     }
 }

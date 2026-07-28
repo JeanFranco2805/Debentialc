@@ -16,12 +16,17 @@ public class PlayerDeathInTerrain implements Listener {
     public void onDeath(PlayerDeathEvent event) {
         Location location = event.getEntity().getLocation();
         Terrain terrain = TerrainManager.getInstance().getTerrainAt(location);
+        if (terrain == null) {
+            return;
+        }
         if (!TerrainCustomizeManager.isRuleEnabled(terrain.getId(), "keepInventory")) {
             Player player = event.getEntity();
             int slot = 0;
             for (ItemStack itemStack : player.getInventory().getContents()) {
                 player.getInventory().setItem(slot, null);
-                location.getWorld().dropItem(location, itemStack);
+                if (itemStack != null && itemStack.getTypeId() != 0) {
+                    location.getWorld().dropItem(location, itemStack);
+                }
                 slot++;
             }
         }

@@ -1,10 +1,15 @@
 package org.debentialc.customitems.commands;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomItem;
+import org.debentialc.customitems.tools.durability.CustomDurabilityManager;
+import org.debentialc.customitems.tools.nbt.NbtHandler;
 import org.debentialc.service.commands.BaseCommand;
 import org.debentialc.service.commands.Command;
 import org.debentialc.service.commands.CommandArgs;
@@ -13,6 +18,7 @@ import org.debentialc.customitems.tools.storage.CustomItemStorage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,15 +28,17 @@ public class CustomItemCommand extends BaseCommand {
     private Player player = null;
 
     public CustomItemCommand() {
+
         super();
         if (itemStorage == null) {
-            itemStorage = new CustomItemStorage();
+            itemStorage = CustomItemStorage.getInstance();
             // Cargar items guardados
             items.putAll(itemStorage.loadAllItems());
         }
     }
 
-    @Command(name = "customitem", aliases = {"customitem", "ci"}, permission = Permissions.COMMAND + "ci")
+    @Command(name = "customitem", aliases = {"customitem", "ci"}, permission = Permissions.COMMAND + "ci",
+    inGameOnly = false)
     @Override
     public void onCommand(CommandArgs command) throws IOException {
         player = command.getPlayer();
@@ -46,7 +54,7 @@ public class CustomItemCommand extends BaseCommand {
             switch (arg0.toLowerCase()) {
                 case "give":
                     if (command.length() < 3) {
-                        player.sendMessage(CC.translate("&cUso: /ci give <id> <jugador> <cantidad>"));
+                        command.getSender().sendMessage(CC.translate("&cUso: /ci give <id> <jugador> <cantidad>"));
                         return;
                     }
                     int cantidad = 1;
@@ -55,15 +63,15 @@ public class CustomItemCommand extends BaseCommand {
                         try {
                             cantidad = Integer.parseInt(command.getArgs(3));
                             if (cantidad < 1) {
-                                player.sendMessage(CC.translate("&cLa cantidad debe ser mayor a 0"));
+                                command.getSender().sendMessage(CC.translate("&cLa cantidad debe ser mayor a 0"));
                                 return;
                             }
                         } catch (NumberFormatException e) {
-                            player.sendMessage(CC.translate("&cCantidad inválida"));
+                            command.getSender().sendMessage(CC.translate("&cCantidad inválida"));
                             return;
                         }
                     }
-                    giveItem(arg1, command.getArgs(2), cantidad);
+                    giveItem(command.getSender(), arg1, command.getArgs(2), cantidad);
                     break;
 
                 case "create":
@@ -397,11 +405,13 @@ public class CustomItemCommand extends BaseCommand {
 
     public boolean isCustom(ItemStack item) {
         if (item == null || item.getTypeId() == 0) return false;
+        NbtHandler nbt = new NbtHandler(item);
+        if (nbt.hasNBT() && nbt.hasKey("debentialc_id") && nbt.getString("debentialc_type") != null) {
+            return items.containsKey(nbt.getString("debentialc_id"));
+        }
         if (!item.hasItemMeta()) return false;
-
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
-
         return items.containsValue(
                 new CustomItem()
                         .setMaterial(item.getTypeId())
@@ -410,13 +420,54 @@ public class CustomItemCommand extends BaseCommand {
         );
     }
 
+    public ItemStack toItemStack(CustomItem item, String fallbackId) {
+        return buildItemStack(item, fallbackId);
+    }
+
     public ItemStack toItemStack(CustomItem item) {
-        ItemStack itemStack = new ItemStack(item.getMaterial());
-        ItemMeta meta = itemStack.getItemMeta();
-        meta.setDisplayName(item.getDisplayName());
-        meta.setLore(item.getLore());
-        itemStack.setItemMeta(meta);
+        return buildItemStack(item, null);
+    }
+
+    public static ItemStack buildItemStack(CustomItem customItem, String fallbackId) {
+        if (customItem == null) return null;
+
+        ItemStack itemStack = org.debentialc.customitems.tools.nbt.NbtItemBuilder.buildItemStack(customItem);
+        itemStack = applyIdentificationTags(itemStack, customItem);
+
+        if (customItem.getMaxDurability() > 0) {
+            CustomDurabilityManager.setCustomMaxDurability(itemStack, customItem.getMaxDurability());
+            CustomDurabilityManager.syncVisualDurabilityForModItem(itemStack, customItem.getMaxDurability(), customItem.getMaxDurability());
+        }
+
         return itemStack;
+    }
+
+    public static ItemStack buildItemStack(CustomItem customItem) {
+        return buildItemStack(customItem, null);
+    }
+
+    private static ItemStack applyIdentificationTags(ItemStack itemStack, CustomItem customItem) {
+        NbtHandler nbt = new NbtHandler(itemStack);
+        nbt.setString("debentialc_id", customItem.getId());
+        nbt.setString("debentialc_type", "item");
+        if (customItem.getRequiredRebirthBlock() != null && !customItem.getRequiredRebirthBlock().isEmpty()) {
+            nbt.setString("debentialc_rebirth_block", customItem.getRequiredRebirthBlock());
+        }
+        if (customItem.getRequiredRebirthLevel() > 0) {
+            nbt.setInteger("debentialc_rebirth_level", customItem.getRequiredRebirthLevel());
+        }
+        if (customItem.getRequiredPermission() != null && !customItem.getRequiredPermission().isEmpty()) {
+            nbt.setString("debentialc_permission", customItem.getRequiredPermission());
+        }
+
+        ItemStack tagged = nbt.getItemStack();
+        ItemMeta meta = tagged.getItemMeta();
+        if (meta != null) {
+            if (customItem.getDisplayName() != null) meta.setDisplayName(customItem.getDisplayName());
+            if (customItem.getLore() != null) meta.setLore(customItem.getLore());
+            tagged.setItemMeta(meta);
+        }
+        return tagged;
     }
 
     public void sendList(Player player, int page) {
@@ -449,31 +500,57 @@ public class CustomItemCommand extends BaseCommand {
         player.sendMessage(CC.translate("&8&l&m--------------------------------------"));
     }
 
-    public void giveItem(String id, String targetName, int cantidad) {
+    public void giveItem(CommandSender sender, String id, String targetName, int cantidad) {
+        if (sender == null) {
+            sender = Bukkit.getConsoleSender();
+        }
+        if (id == null || id.isEmpty()) {
+            sender.sendMessage(CC.translate("&cDebes especificar un id de item."));
+            return;
+        }
         if (!items.containsKey(id)) {
-            player.sendMessage(CC.translate("&cItem no encontrado: &f" + id));
+            sender.sendMessage(CC.translate("&cItem no encontrado: &f" + id));
             return;
         }
 
-        Player target = player.getServer().getPlayerExact(targetName);
+        Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            player.sendMessage(CC.translate("&cJugador no encontrado o no está conectado: &f" + targetName));
+            sender.sendMessage(CC.translate("&cJugador no encontrado o no está conectado: &f" + targetName));
             return;
         }
 
         CustomItem customItem = items.get(id);
-        ItemStack itemStack = toItemStack(customItem);
+        ItemStack itemStack = buildItemStack(customItem, id);
+        if (itemStack == null) {
+            sender.sendMessage(CC.translate("&cError al crear el item &f" + id + "&c. Revisa su configuración."));
+            return;
+        }
         itemStack.setAmount(cantidad);
 
-        target.getInventory().addItem(itemStack);
+        HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(itemStack);
+        if (!leftover.isEmpty()) {
+            Location loc = target.getLocation();
+            for (ItemStack drop : leftover.values()) {
+                target.getWorld().dropItemNaturally(loc, drop);
+            }
+            sender.sendMessage(CC.translate("&e⚠ El inventario de &f" + target.getName() + " &eestaba lleno. Algunos items cayeron al suelo."));
+        }
         target.updateInventory();
 
-        player.sendMessage(CC.translate("&aEntregado &f" + cantidad + "x " + id + " &aa &f" + target.getName()));
-        target.sendMessage(CC.translate("&aRecibiste: &f" + cantidad + "x " + customItem.getDisplayName()));
+        String displayName = customItem.getDisplayName() != null ? customItem.getDisplayName() : id;
+        sender.sendMessage(CC.translate("&aEntregado &f" + cantidad + "x " + displayName + " &aa &f" + target.getName()));
+        target.sendMessage(CC.translate("&aRecibiste: &f" + cantidad + "x " + displayName));
     }
 
     public CustomItem toItemCustom(ItemStack itemStack) {
         if (itemStack == null || itemStack.getItemMeta() == null) return null;
+
+        NbtHandler nbt = new NbtHandler(itemStack);
+        if (nbt.hasNBT() && nbt.hasKey("debentialc_id")) {
+            CustomItem byId = items.get(nbt.getString("debentialc_id"));
+            if (byId != null) return byId;
+        }
+
         String displayName = itemStack.getItemMeta().getDisplayName();
         List<String> lore = itemStack.getItemMeta().getLore();
         int materialId = itemStack.getTypeId();

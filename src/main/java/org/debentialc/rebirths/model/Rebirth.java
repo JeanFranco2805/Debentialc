@@ -12,7 +12,7 @@ import java.util.List;
 public class Rebirth {
 
     private int id;
-    private int blockId;
+    private String blockId;
     private String displayName;
     private int requiredLevel;
     private double tpBonusPercent;
@@ -20,9 +20,13 @@ public class Rebirth {
     private List<ItemStack> rewardItems;
     private List<String> rewardCommands;
 
+    // Optional stat bonus applied on unlock
+    private double statBonusMultiplier = 0.0;
+    private String statBonusOperation = "*";
+
     public Rebirth(int id) {
         this.id = id;
-        this.blockId = 0;
+        this.blockId = null;
         this.displayName = "Rebirth " + id;
         this.requiredLevel = 0;
         this.tpBonusPercent = 0.0;
@@ -31,7 +35,7 @@ public class Rebirth {
         this.rewardCommands = new ArrayList<>();
     }
 
-    public Rebirth(int id, int blockId, String displayName, int requiredLevel, double tpBonusPercent, List<String> allowedRegions, List<ItemStack> rewardItems, List<String> rewardCommands) {
+    public Rebirth(int id, String blockId, String displayName, int requiredLevel, double tpBonusPercent, List<String> allowedRegions, List<ItemStack> rewardItems, List<String> rewardCommands) {
         this.id = id;
         this.blockId = blockId;
         this.displayName = displayName;

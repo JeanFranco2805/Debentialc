@@ -148,10 +148,9 @@ public class CustomDurabilityManager {
         current -= damage;
 
         if (current <= 0) {
-            if (isUnbreakable(item)) {
-                setCustomDurability(item, 1, max);
-                return false;
-            }
+            // Custom durability takes precedence over the Unbreakable NBT tag.
+            // If the item has a custom durability bar and it reaches 0, it must break.
+            setCustomDurability(item, 0, max);
             return true;
         }
 

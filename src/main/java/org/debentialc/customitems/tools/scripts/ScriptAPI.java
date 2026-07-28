@@ -10,6 +10,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.debentialc.Main;
 import org.debentialc.service.CC;
+import org.debentialc.service.ServerUtil;
 import org.mozilla.javascript.Function;
 
 import java.util.ArrayList;
@@ -48,9 +49,10 @@ public class ScriptAPI {
      * Obtiene todos los jugadores online
      */
     public Player[] getOnlinePlayers() {
+        Player[] online = ServerUtil.getOnlinePlayers();
         Player[] players = new Player[Main.instance.getServer().getMaxPlayers()];
         int i = 0;
-        for (Player onlinePlayer : Main.instance.getServer().getOnlinePlayers()) {
+        for (Player onlinePlayer : online) {
             players[i] = onlinePlayer;
             i++;
         }
@@ -62,7 +64,8 @@ public class ScriptAPI {
      */
     public List<Player> getNearbyPlayers(Location location, double radius) {
         List<Player> nearby = new ArrayList<>();
-        for (Player player : Main.instance.getServer().getOnlinePlayers()) {
+        Player[] players = ServerUtil.getOnlinePlayers();
+        for (Player player : players) {
             if (player.getWorld().equals(location.getWorld()) &&
                     player.getLocation().distance(location) <= radius) {
                 nearby.add(player);
@@ -100,7 +103,8 @@ public class ScriptAPI {
      * Cura completamente a un jugador
      */
     public void heal(Player player) {
-        player.setHealth(player.getMaxHealth());
+        double maxHealth = ServerUtil.getMaxHealth(player);
+        player.setHealth(maxHealth);
         player.setFoodLevel(20);
         player.setFireTicks(0);
         player.getActivePotionEffects().forEach(effect ->
@@ -327,21 +331,22 @@ public class ScriptAPI {
      * Obtiene la vida del jugador
      */
     public double getHealth(Player player) {
-        return player.getHealth();
+        return ServerUtil.getHealth(player);
     }
 
     /**
      * Obtiene la vida máxima del jugador
      */
     public double getMaxHealth(Player player) {
-        return player.getMaxHealth();
+        return ServerUtil.getMaxHealth(player);
     }
 
     /**
      * Establece la vida del jugador
      */
     public void setHealth(Player player, double health) {
-        player.setHealth(Math.min(health, player.getMaxHealth()));
+        double maxHealth = ServerUtil.getMaxHealth(player);
+        player.setHealth(Math.min(health, maxHealth));
     }
 
     /**

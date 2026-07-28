@@ -2,6 +2,7 @@ package org.debentialc.customitems.tools.inventory;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomArmor;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
@@ -65,7 +66,7 @@ public class ArmorEditManager {
         }
 
         CustomArmor armor = RegisterItem.items.get(state.armorId);
-        CustomArmorStorage storage = new CustomArmorStorage();
+        CustomArmorStorage storage = CustomArmorStorage.getInstance();
 
         if ("rename".equals(state.editType.toLowerCase())) {
             armor.setDisplayName(CC.translate(input));
@@ -146,6 +147,8 @@ public class ArmorEditManager {
             itemStack = restored;
         }
 
+        itemStack = applyIdentificationTags(itemStack, customArmor);
+
         if (customArmor.getMaxDurability() > 0) {
             CustomDurabilityManager.setCustomMaxDurability(itemStack, customArmor.getMaxDurability());
         }
@@ -161,6 +164,30 @@ public class ArmorEditManager {
             player.sendMessage(CC.translate("&a✓ Armadura entregada"));
             player.sendMessage("");
         }
+    }
+
+    private static ItemStack applyIdentificationTags(ItemStack itemStack, CustomArmor customArmor) {
+        NbtHandler nbt = new NbtHandler(itemStack);
+        nbt.setString("debentialc_id", customArmor.getId());
+        nbt.setString("debentialc_type", "armor");
+        if (customArmor.getRequiredRebirthBlock() != null && !customArmor.getRequiredRebirthBlock().isEmpty()) {
+            nbt.setString("debentialc_rebirth_block", customArmor.getRequiredRebirthBlock());
+        }
+        if (customArmor.getRequiredRebirthLevel() > 0) {
+            nbt.setInteger("debentialc_rebirth_level", customArmor.getRequiredRebirthLevel());
+        }
+        if (customArmor.getRequiredPermission() != null && !customArmor.getRequiredPermission().isEmpty()) {
+            nbt.setString("debentialc_permission", customArmor.getRequiredPermission());
+        }
+
+        ItemStack tagged = nbt.getItemStack();
+        ItemMeta meta = tagged.getItemMeta();
+        if (meta != null) {
+            if (customArmor.getDisplayName() != null) meta.setDisplayName(customArmor.getDisplayName());
+            if (customArmor.getLore() != null) meta.setLore(customArmor.getLore());
+            tagged.setItemMeta(meta);
+        }
+        return tagged;
     }
 
     private static ItemStack rebuildMeta(ItemStack item, String displayName, java.util.List<String> lore) {

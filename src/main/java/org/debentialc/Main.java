@@ -8,6 +8,7 @@ import com.massivecraft.factions.entity.MPlayer;
 import com.massivecraft.massivecore.ps.PS;
 import lombok.Getter;
 import noppes.npcs.api.entity.ICustomNpc;
+import noppes.npcs.api.entity.IDBCPlayer;
 import noppes.npcs.api.event.INpcEvent;
 import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
@@ -32,14 +33,24 @@ import org.debentialc.customitems.tools.fragments.FragmentBonusIntegration;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
 import org.debentialc.raids.events.NPCDeathListener;
 import org.debentialc.raids.managers.RaidStorageManager;
+import org.debentialc.factions.FactionsModule;
 import org.debentialc.rebirths.RebirthModule;
+import org.debentialc.worldguard.WorldGuardModule;
 import org.debentialc.rebirths.managers.RebirthBlockManager;
 import org.debentialc.rebirths.managers.RebirthManager;
 import org.debentialc.rebirths.storage.RebirthStorage;
+import org.debentialc.service.CC;
 import org.debentialc.service.ClassesRegistration;
+import org.debentialc.service.ServerUtil;
 import org.debentialc.service.commands.CommandFramework;
+import org.debentialc.scoreboard.ScoreboardModule;
+import org.debentialc.swords.SwordsModule;
+import org.debentialc.trainings.TrainingModule;
+import org.debentialc.trainings.managers.TrainingManager;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
 
 import static org.debentialc.customitems.tools.ci.CustomManager.effectsTask;
 import static org.debentialc.customitems.tools.config.DBCConfigManager.loadAllConfigs;
@@ -50,11 +61,13 @@ public class Main extends JavaPlugin {
     private final CommandFramework commandFramework = new CommandFramework(this);
 
     private final ClassesRegistration classesRegistration = new ClassesRegistration();
+    public static HashMap<Integer, ICustomNpc<?>> npcMap = new HashMap<>();
 
     static {
         String ruta1 = System.getProperty("user.dir") + File.separator + "plugins";
         File file = new File(ruta1, "Debentialc");
         file.mkdir();
+
     }
 
     public static Main instance;
@@ -71,12 +84,17 @@ public class Main extends JavaPlugin {
         classesRegistration.loadCommands("org.debentialc.boosters.commands");
         classesRegistration.loadCommands("org.debentialc.claims.commands");
         classesRegistration.loadCommands("org.debentialc.rebirths.commands");
+        classesRegistration.loadCommands("org.debentialc.trainings.commands");
+        classesRegistration.loadCommands("org.debentialc.crates.commands");
+        classesRegistration.loadCommands("org.debentialc.utilities.commands");
 
         classesRegistration.loadListeners("org.debentialc.customitems.events");
         classesRegistration.loadListeners("org.debentialc.boosters.events");
         classesRegistration.loadListeners("org.debentialc.raids.events");
         classesRegistration.loadListeners("org.debentialc.claims.events");
         classesRegistration.loadListeners("org.debentialc.rebirths.events");
+        classesRegistration.loadListeners("org.debentialc.trainings.events");
+        classesRegistration.loadListeners("org.debentialc.crates.events");
 
         CustomManager.armorTask();
         effectsTask();
@@ -89,16 +107,23 @@ public class Main extends JavaPlugin {
         PlaceholderModule.initialize(this);
         ClaimsModule.initialize(this);
         RebirthModule.initialize(this);
+        TrainingModule.initialize(this);
+        ScoreboardModule.initialize(this);
+        FactionsModule.initialize();
+        WorldGuardModule.initialize();
+        SwordsModule.initialize();
 
+        //Factions.get ( ).getOuterCmdFactions ( ).addSubCommand ( new CmdFactionZenkais ( ) );
         registerCustomNPCsEvents();
 
         RaidStorageManager.loadAllRaids();
         System.out.println("[Raids] Sistema de raids inicializado");
     }
+
     /**
      * Tarea periódica que aplica efectos ambientales y tiempo de terreno a los jugadores.
      * Se ejecuta cada 5 segundos (100 ticks).
-     *
+     * <p>
      * CAMBIO: ahora también llama a applyTimeToPlayer para que el tiempo sea
      * individual por jugador según el terreno donde se encuentren.
      */
@@ -106,13 +131,29 @@ public class Main extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player player : getServer().getOnlinePlayers()) {
+                Player[] players = ServerUtil.getOnlinePlayers();
+                for (Player player : players) {
                     TerrainCustomizeManager.applyEffectToPlayer(player);
                     TerrainCustomizeManager.applyTimeToPlayer(player);
                 }
             }
         }.runTaskTimer(this, 20L, 180L);
     }
+
+    public static void registerBoss(ICustomNpc<?> npc) {
+        npcMap.put(npc.getEntityId(), npc);
+    }
+
+    public static void unregisterBoss(ICustomNpc<?> npc) {
+        npcMap.remove(npc.getEntityId());
+    }
+
+    public static void respawnAllNpc() {
+        for (ICustomNpc<?> value : npcMap.values()) {
+            value.setRespawnTime(0);
+        }
+    }
+
     /**
      * Registra los eventos de CustomNPCs
      * Debe ejecutarse después de que el servidor esté completamente iniciado
@@ -148,7 +189,8 @@ public class Main extends JavaPlugin {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player onlinePlayer : Main.instance.getServer().getOnlinePlayers()) {
+                Player[] players = ServerUtil.getOnlinePlayers();
+                for (Player onlinePlayer : players) {
                     FragmentBonusIntegration.applyFragmentBonuses(onlinePlayer);
                 }
             }
@@ -169,7 +211,7 @@ public class Main extends JavaPlugin {
      * @param blockId    ID del bloque
      * @return Nivel de rebirth desbloqueado dentro del bloque (0 si no tiene ninguno)
      */
-    public static int getPlayerRebirthLevelInBlock(String playerName, int blockId) {
+    public static int getPlayerRebirthLevelInBlock(String playerName, String blockId) {
         Player onlinePlayer = Bukkit.getPlayerExact(playerName);
 
         java.util.UUID uuid;
@@ -184,14 +226,39 @@ public class Main extends JavaPlugin {
             uuid = offlinePlayer.getUniqueId();
         }
 
-        int globalLevel = RebirthStorage.getInstance().loadPlayerRebirthLevel(uuid);
-        return RebirthBlockManager.getInstance().getLocalRebirthLevel(globalLevel, blockId);
+        return RebirthBlockManager.getInstance().getLocalRebirthLevel(uuid, blockId);
+    }
+
+    /**
+     * Devuelve el nivel de training que un jugador tiene desbloqueado.
+     *
+     * @param playerName Nombre del jugador (puede estar online u offline)
+     * @param trainingId ID del training
+     * @return Nivel de training desbloqueado (0 si no tiene ninguno)
+     */
+    public static int getPlayerTrainingLevel(String playerName, String trainingId) {
+        Player onlinePlayer = Bukkit.getPlayerExact(playerName);
+
+        java.util.UUID uuid;
+        if (onlinePlayer != null) {
+            uuid = onlinePlayer.getUniqueId();
+        } else {
+            @SuppressWarnings("deprecation")
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+            if (offlinePlayer == null || !offlinePlayer.hasPlayedBefore()) {
+                return 0;
+            }
+            uuid = offlinePlayer.getUniqueId();
+        }
+
+        return TrainingManager.getInstance().getPlayerTrainingLevel(uuid, trainingId);
     }
 
     @Override
     public void onDisable() {
         BoosterModule.shutdown();
         PlaceholderModule.shutdown();
+        ScoreboardModule.shutdown();
     }
 
     public static void exampleUsage() {
@@ -217,9 +284,10 @@ public class Main extends JavaPlugin {
         if (active != null) {
             player.sendMessage("Booster personal activo: " +
                     BoosterUtils.formatPercentage(active.getMultiplier()));
-            player.sendMessage("Nivel: " + active.getLevelName());
+            player.sendMessage("Tipo: " + active.getLevelName());
+            long remaining = active.getActivationTimeRemaining();
             player.sendMessage("Tiempo restante: " +
-                    BoosterUtils.formatTime(active.getActivationTimeRemaining(900)));
+                    (remaining < 0 ? "∞" : BoosterUtils.formatTime(remaining)));
         }
     }
 
@@ -254,12 +322,9 @@ public class Main extends JavaPlugin {
         Player player = Bukkit.getPlayer("PlayerName");
         if (player == null) return;
 
-        int level = 4;
-        double multiplier = BoosterSettings.getPersonalBoosterMultiplier(level);
-        PersonalBooster booster = new PersonalBooster(player.getUniqueId(), level, multiplier);
-
-        PersonalBoosterManager.addBooster(booster);
-        player.sendMessage("§aHas recibido un booster personal nivel " + level);
+        double multiplier = 1.5;
+        PersonalBoosterManager.setBooster(player.getUniqueId(), multiplier, 0);
+        player.sendMessage("§aHas recibido un booster personal +50%");
     }
 
     public static void applyBoosterInCalculation(Player player, double baseValue) {
@@ -270,30 +335,40 @@ public class Main extends JavaPlugin {
         player.sendMessage("§eMultiplicador: " + BoosterUtils.formatMultiplier(multiplier));
         player.sendMessage("§6Resultado: " + result);
     }
-    public void lossPower(ICustomNpc<?> npc){
-        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
-        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
+
+    public void lossPower(ICustomNpc<?> npc) {
+        Location location = new Location(Main.instance.getServer().getWorld("factions"), npc.getX(), npc.getY(), npc.getZ());
+        Faction faction = BoardColl.get().getFactionAt(PS.valueOf(location));
         for (MPlayer mPlayer : faction.getMPlayers()) {
             mPlayer.setPower(mPlayer.getPower() - 1);
         }
     }
-    public void lossPower(ICustomNpc<?> npc, int power){
-        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
-        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
+
+    public void lossPower(ICustomNpc<?> npc, int power) {
+        Location location = new Location(Main.instance.getServer().getWorld("factions"), npc.getX(), npc.getY(), npc.getZ());
+        Faction faction = BoardColl.get().getFactionAt(PS.valueOf(location));
         for (MPlayer mPlayer : faction.getMPlayers()) {
             mPlayer.setPower(mPlayer.getPower() - power);
         }
     }
-    public void unclaim ( ICustomNpc<?> npc ) {
-        Location location = new Location ( Main.instance.getServer ( ).getWorld ( "world" ), npc.getX ( ), npc.getY ( ), npc.getZ ( ) );
-        Faction faction = BoardColl.get ( ).getFactionAt ( PS.valueOf ( location ) );
-        int chunkX = location.getChunk ( ).getX ( );
-        int chunkZ = location.getChunk ( ).getZ ( );
-        PS ps = PS.valueOf ( location.getWorld ( ).getName ( ), chunkX, chunkZ );
-        Bukkit.broadcastMessage ( "§cSe desclaimó el chunk en X:" + chunkX + " Z:" + chunkZ + " de la facción " + faction.getName ( ) );
-        Faction wilderness = FactionColl.get ( ).getNone ( );
-        BoardColl.get ( ).setFactionAt ( ps, wilderness );
+
+    public List<MPlayer> getFactionPlayers(ICustomNpc<?> npc) {
+        Location location = new Location(Main.instance.getServer().getWorld("factions"), npc.getX(), npc.getY(), npc.getZ());
+        Faction faction = BoardColl.get().getFactionAt(PS.valueOf(location));
+        return faction.getMPlayers();
     }
+
+    public void unclaim(ICustomNpc<?> npc) {
+        Location location = new Location(Main.instance.getServer().getWorld("factions"), npc.getX(), npc.getY(), npc.getZ());
+        Faction faction = BoardColl.get().getFactionAt(PS.valueOf(location));
+        int chunkX = location.getChunk().getX();
+        int chunkZ = location.getChunk().getZ();
+        PS ps = PS.valueOf(location.getWorld().getName(), chunkX, chunkZ);
+        Bukkit.broadcastMessage("§cSe desclaimó el chunk en X:" + chunkX + " Z:" + chunkZ + " de la facción " + faction.getName());
+        Faction wilderness = FactionColl.get().getNone();
+        BoardColl.get().setFactionAt(ps, wilderness);
+    }
+
     public void unclaim(ICustomNpc<?> npc, int radio) {
         World world = Main.instance.getServer().getWorld("world");
         Location location = new Location(world, npc.getX(), npc.getY(), npc.getZ());
@@ -330,42 +405,63 @@ public class Main extends JavaPlugin {
 
         Bukkit.broadcastMessage("§cSe desclaimaron §e" + unclaimed + " §cchunks en radio de " + radio + " de la facción " + faction.getName());
     }
-    public String getPlayerFactionName ( Player player ) {
-        MPlayer mPlayer = MPlayer.get ( player );
-        Faction faction = mPlayer.getFaction ( );
+
+    public String getPlayerFactionName(Player player) {
+        MPlayer mPlayer = MPlayer.get(player);
+        Faction faction = mPlayer.getFaction();
         if (faction == null) return null;
-        return faction.getName ( );
+        return faction.getName();
     }
 
-    public String getPlayerAtFactionLoc ( Player player ) {
-        Faction faction2 = BoardColl.get ( ).getFactionAt ( PS.valueOf ( player.getLocation ( ) ) );
+    public String getPlayerAtFactionLoc(Player player) {
+        Faction faction2 = BoardColl.get().getFactionAt(PS.valueOf(player.getLocation()));
         if (faction2 == null) return null;
-        return faction2.getName ( );
+        return faction2.getName();
     }
 
-    public String getTopLandFaction () {
-        return FactionColl.get ( ).getAll ( ).stream ( ).reduce ( ( a, b ) -> {
-            if (a.getLandCount ( ) > b.getLandCount ( )) return a;
+    public String getNpcAtFactionLoc(ICustomNpc<?> npc) {
+        int x = npc.getPosition().getX();
+        int y = npc.getPosition().getX();
+        int z = npc.getPosition().getX();
+        Location location = new Location(Main.instance.getServer().getWorld("factions"), x, y, z);
+        Faction faction2 = BoardColl.get().getFactionAt(PS.valueOf(location));
+        if (faction2 == null) return null;
+        return faction2.getName();
+    }
+
+    public String getTopLandFaction() {
+        return FactionColl.get().getAll().stream().reduce((a, b) -> {
+            if (a.getLandCount() > b.getLandCount()) return a;
             else return b;
-        } ).orElse ( new Faction ( ) ).getName ( );
+        }).orElse(new Faction()).getName();
     }
 
-    public boolean hasAccessFaction ( String name ) {
-        Player player = Bukkit.getPlayer ( name );
-        MPlayer mPlayer = MPlayer.get ( player );
-        Faction faction = mPlayer.getFaction ( );
-        long alliesCount = FactionColl.get ( ).getAll ( ).stream ( )
-                .filter ( e -> e.getRelationTo ( faction ) == Rel.ALLY )
-                .count ( );
-
+    public boolean hasAccessFaction(String name) {
+        Player player = Bukkit.getPlayer(name);
+        MPlayer mPlayer = MPlayer.get(player);
+        Faction faction = mPlayer.getFaction();
         if (faction == null) return false;
-        Faction faction2 = BoardColl.get ( ).getFactionAt ( PS.valueOf ( player.getLocation ( ) ) );
+        Faction faction2 = BoardColl.get().getFactionAt(PS.valueOf(player.getLocation()));
         if (faction2 != null) {
-            if (faction.getName ( ).equalsIgnoreCase ( faction2.getName ( ) )
-                    && !faction.getName ( ).contains ( "Wilderness" )) {
+            if (faction.getName().equalsIgnoreCase(faction2.getName())
+                    && !faction.getName().contains("Wilderness")) {
                 return true;
             }
         }
         return false;
+    }
+
+    public void sendNoAccessFactionMessage(Player player) {
+        Faction faction2 = BoardColl.get().getFactionAt(PS.valueOf(player.getLocation()));
+        if (faction2 != null) {
+            player.sendMessage(CC.translate("&cEste NPC es propiedad de la faction: &4" + faction2.getName()));
+        }
+    }
+
+    public int getNpcBaseTp(String trainingId, String npcId) {
+        org.debentialc.trainings.model.Training training = org.debentialc.trainings.managers.TrainingManager.getInstance().getTraining(trainingId);
+        if (training == null) return 0;
+        Integer tp = training.getNpcBaseTp(npcId);
+        return tp != null ? tp : 0;
     }
 }

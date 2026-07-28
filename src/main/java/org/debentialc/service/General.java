@@ -1,13 +1,31 @@
 package org.debentialc.service;
 
 import JinRyuu.JRMCore.JRMCoreH;
+import kamkeel.npcdbc.api.AbstractDBCAPI;
+import kamkeel.npcdbc.api.IDBCAddon;
+import kamkeel.npcdbc.constants.DBCClass;
 import kamkeel.npcdbc.constants.DBCRace;
+import kamkeel.npcdbc.scripted.DBCAPI;
+import kamkeel.npcs.addon.DBCAddon;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.v1_7_R4.EntityPlayer;
+import net.minecraft.util.DamageSource;
+import noppes.npcs.NpcDamageSource;
+import noppes.npcs.api.IDamageSource;
 import noppes.npcs.api.IWorld;
 import noppes.npcs.api.entity.ICustomNpc;
 import noppes.npcs.api.entity.IDBCPlayer;
+import noppes.npcs.api.entity.IEntity;
+import noppes.npcs.api.event.INpcEvent;
+import noppes.npcs.api.handler.data.IQuest;
 import noppes.npcs.scripted.NpcAPI;
+import noppes.npcs.scripted.ScriptDamageSource;
+import noppes.npcs.scripted.event.NpcEvent;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.debentialc.customitems.tools.config.DBCConfigManager;
 
 import java.util.HashMap;
 
@@ -44,8 +62,112 @@ public class General {
         STATS_MAP.put("MND", MND2);
         STATS_MAP.put("SPI", SPI2);
     }
-    public static String getRankColorCode ( Player player ) {
-        int level = getLVL ( player );
+
+    public static void giveMastery(IDBCPlayer idbcPlayer, double mastery) {
+        IDBCAddon DBC = (IDBCAddon) idbcPlayer;
+        if (DBC.isInCustomForm()) {
+            DBC.addCustomMastery(DBC.getCurrentForm(), (float) mastery);
+        } else {
+            DBC.changeDBCMastery(DBC.getCurrentDBCFormName(), mastery, true);
+        }
+
+        if (DBC.isKaioken()) {
+            DBC.changeDBCMastery("Kaioken", mastery, true);
+        }
+    }
+
+    public static void setRelease(Player player, byte release) {
+        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
+        idbcPlayer.setRelease(release);
+    }
+
+    public static String getClass(Player player) {
+        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
+        byte clase = idbcPlayer.getDBCClass();
+        if (DBCClass.Spiritualist == clase) {
+            return "Spiritualist";
+        } else if (DBCClass.Warrior == clase) {
+            return "Warrior";
+        } else if (DBCClass.MartialArtist == clase) {
+            return "MartialArtist";
+        }
+        return "N/A";
+    }
+
+    public static String getRaceName(IDBCPlayer idbcPlayer) {
+        switch (idbcPlayer.getRace()) {
+            case DBCRace.HALFSAIYAN:
+                return "Half-Saiyan";
+            case DBCRace.SAIYAN:
+                return "Saiyan";
+            case DBCRace.HUMAN:
+                return "Human";
+            case DBCRace.NAMEKIAN:
+                return "Namekian";
+            case DBCRace.ARCOSIAN:
+                return "Arcosian";
+            case DBCRace.MAJIN:
+                return "Majin";
+            default:
+                return "N/A";
+        }
+    }
+
+    public static String getClassName(IDBCPlayer idbcPlayer) {
+        switch (idbcPlayer.getDBCClass()) {
+            case DBCClass.Spiritualist:
+                return "Spiritualist";
+            case DBCClass.Warrior:
+                return "Warrior";
+            case DBCClass.MartialArtist:
+                return "MartialArtist";
+            default:
+                return "N/A";
+        }
+    }
+
+    public static void damageNpcByArea(Player player, int range) {
+        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
+        IWorld world = idbcPlayer.getWorld();
+        double damage = DBCConfigManager.getMeleeMultiplier(getRaceName(idbcPlayer).toLowerCase(), getClassName(idbcPlayer));
+        //IEntity playerEntity = NpcAPI.Instance().getPlayer(player.getName());
+        Entity source = idbcPlayer.getMCEntity();
+        IDamageSource damageSource = new ScriptDamageSource(new NpcDamageSource("player", source));
+        IEntity[] entities = world.getEntitiesNear(idbcPlayer.getPosition().getX(),
+                idbcPlayer.getPosition().getY(), idbcPlayer.getPosition().getZ(), range);
+        for (IEntity entity : entities) {
+            if (!(entity instanceof ICustomNpc)) {
+                continue;
+            }
+            ICustomNpc<?> npc = (ICustomNpc<?>) entity;
+            double dx = npc.getX() - idbcPlayer.getPosition().getX();
+            double dz = npc.getZ() - idbcPlayer.getPosition().getZ();
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist == 0) {
+                continue;
+            }
+            dx /= dist;
+            dz /= dist;
+            npc.setMotionX(dx * 1.5);
+            npc.setMotionY(0.3);
+            npc.setMotionZ(dz * 1.5);
+            npc.hurt((float) damage, damageSource);
+            npc.addPotionEffect(2, 40, 1, false);
+            world.spawnParticle("crit", npc.getX(), npc.getY() + 1, npc.getZ(), 0.2, 0.2, 0.2, 0.05, 6);
+            world.spawnParticle("cloud", npc.getX(), npc.getY() + 0.5, npc.getZ(), 0.1, 0.1, 0.1, 0.01, 3);
+        }
+        world.spawnParticle("cloud", idbcPlayer.getPosition().getX(), idbcPlayer.getPosition().getY() + 1, idbcPlayer.getPosition().getZ(), 0.3, 0.1, 0.3, 0.01, 8);
+    }
+
+    public static void restartAllQuest(Player player) {
+        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
+        for (IQuest quest : idbcPlayer.getFinishedQuests()) {
+            idbcPlayer.removeQuest(quest);
+        }
+    }
+
+    public static String getRankColorCode(Player player) {
+        int level = getLVL(player);
         if (level >= 300 && level <= 1000) {
             return "&8[&fF&8]";
         } else if (level >= 1001 && level <= 3000) {
@@ -72,12 +194,14 @@ public class General {
             return "&8[?]";
         }
     }
+
     public static IDBCPlayer getDBCPlayer(String name) {
         return NpcAPI.Instance().getPlayer(name).getDBCPlayer();
     }
-    public static String getRace ( Player player ) {
-        IDBCPlayer dbcPlayer = NpcAPI.Instance ( ).getPlayer ( player.getName ( ) ).getDBCPlayer ( );
-        switch (dbcPlayer.getRace ( )) {
+
+    public static String getRace(Player player) {
+        IDBCPlayer dbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
+        switch (dbcPlayer.getRace()) {
             case DBCRace.HALFSAIYAN:
                 return "Semi-Saiyan";
             case DBCRace.ARCOSIAN:
@@ -97,6 +221,7 @@ public class General {
     public static int getSTAT(String stat, Player entity) {
         return JRMCoreH.getInt(toPlayerMP(entity), STATS_MAP.get(stat.toUpperCase()));
     }
+
     public static void setSTAT(String stat, Player entity, int value) {
         JRMCoreH.setInt(value, toPlayerMP(entity), STATS_MAP.get(stat.toUpperCase()));
     }
@@ -130,7 +255,6 @@ public class General {
         IWorld world = idbcPlayer.getWorld();
         ICustomNpc<?> npc = (ICustomNpc<?>) world.spawnClone(x, y, z, tab, npcname);
     }
-
 
 
 }

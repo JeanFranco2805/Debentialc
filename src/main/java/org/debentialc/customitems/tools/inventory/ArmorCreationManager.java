@@ -66,7 +66,7 @@ public class ArmorCreationManager {
 
         // Guardar en BD
         org.debentialc.customitems.tools.storage.CustomArmorStorage storage =
-                new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+                org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
         storage.saveArmor(customArmor);
 
         player.sendMessage("");

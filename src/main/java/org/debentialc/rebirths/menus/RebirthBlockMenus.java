@@ -65,7 +65,7 @@ public class RebirthBlockMenus {
                         ));
                         createButton.setItemMeta(createMeta);
                         contents.set(1, 5, ClickableItem.of(createButton, e -> {
-                            int nextId = RebirthBlockManager.getInstance().getNextBlockId();
+                            String nextId = RebirthBlockManager.getInstance().getNextBlockId();
                             RebirthBlock block = new RebirthBlock(nextId);
                             RebirthBlockManager.getInstance().saveBlock(block);
                             player.sendMessage(CC.translate("&a✓ Bloque &e" + nextId + " &acreado."));
@@ -115,14 +115,15 @@ public class RebirthBlockMenus {
                             List<String> lore = new ArrayList<>();
                             lore.add(CC.translate("&7ID: &f" + block.getId()));
                             lore.add(CC.translate("&7Rebirths: &f" + block.getRebirthIds().size()));
-                            lore.add(CC.translate("&7Guarda nivel: " + (block.isSaveLevel() ? "&aSí" : "&cNo")));
+                            lore.add(CC.translate("&7VIP: " + (block.isVip() ? "&aSí" : "&cNo")));
                             lore.add("");
                             lore.add(CC.translate("&a[CLICK PARA ENTRAR]"));
                             meta.setLore(lore);
                             item.setItemMeta(meta);
 
+                            String blockId = block.getId();
                             contents.set(row, col, ClickableItem.of(item, e -> {
-                                createBlockMenu(block.getId()).open(player);
+                                createBlockMenu(blockId).open(player);
                             }));
 
                             col++;
@@ -171,7 +172,7 @@ public class RebirthBlockMenus {
                 .build();
     }
 
-    public static SmartInventory createBlockMenu(int blockId) {
+    public static SmartInventory createBlockMenu(String blockId) {
         RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
         if (block == null) return null;
 
@@ -188,7 +189,6 @@ public class RebirthBlockMenus {
                         List<String> infoLore = new ArrayList<>();
                         infoLore.add(CC.translate("&7ID: &f" + block.getId()));
                         infoLore.add(CC.translate("&7Rebirths: &f" + block.getRebirthIds().size()));
-                        infoLore.add(CC.translate("&7Guarda nivel: " + (block.isSaveLevel() ? "&aSí" : "&cNo")));
                         infoMeta.setLore(infoLore);
                         info.setItemMeta(infoMeta);
                         contents.set(0, 4, ClickableItem.empty(info));
@@ -237,22 +237,42 @@ public class RebirthBlockMenus {
                             RebirthBlockInputManager.startInput(player, blockId, RebirthBlockInputManager.InputType.BLOCK_NAME, () -> createBlockMenu(blockId).open(player));
                         }));
 
-                        ItemStack saveButton = new ItemStack(Material.BOOK_AND_QUILL);
-                        ItemMeta saveMeta = saveButton.getItemMeta();
-                        saveMeta.setDisplayName(CC.translate("&a&lGuardar Nivel"));
-                        List<String> saveLore = new ArrayList<>();
-                        saveLore.add(CC.translate("&7Estado: " + (block.isSaveLevel() ? "&aACTIVADO" : "&cDESACTIVADO")));
-                        saveLore.add("");
-                        saveLore.add(CC.translate("&7Si está activado, los rebirths"));
-                        saveLore.add(CC.translate("&7de este bloque conservan sus stats."));
-                        saveLore.add("");
-                        saveLore.add(CC.translate("&a[CLICK PARA CAMBIAR]"));
-                        saveMeta.setLore(saveLore);
-                        saveButton.setItemMeta(saveMeta);
-                        contents.set(1, 7, ClickableItem.of(saveButton, e -> {
-                            block.setSaveLevel(!block.isSaveLevel());
+                        ItemStack permissionButton = new ItemStack(Material.TRIPWIRE_HOOK);
+                        ItemMeta permissionMeta = permissionButton.getItemMeta();
+                        permissionMeta.setDisplayName(CC.translate("&c&lPermiso de Acceso"));
+                        List<String> permissionLore = new ArrayList<>();
+                        permissionLore.add(CC.translate("&7Permiso necesario para entrar"));
+                        permissionLore.add(CC.translate("&7a este bloque en /rebirth"));
+                        permissionLore.add("");
+                        if (block.getRequiredPermission() != null && !block.getRequiredPermission().isEmpty()) {
+                            permissionLore.add(CC.translate("&7Actual: &f" + block.getRequiredPermission()));
+                        } else {
+                            permissionLore.add(CC.translate("&cSin permiso (libre)"));
+                        }
+                        permissionLore.add("");
+                        permissionLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        permissionMeta.setLore(permissionLore);
+                        permissionButton.setItemMeta(permissionMeta);
+                        contents.set(2, 1, ClickableItem.of(permissionButton, e -> {
+                            RebirthBlockInputManager.startInput(player, blockId, RebirthBlockInputManager.InputType.BLOCK_PERMISSION, () -> createBlockMenu(blockId).open(player));
+                        }));
+
+                        ItemStack vipButton = new ItemStack(Material.DIAMOND);
+                        ItemMeta vipMeta = vipButton.getItemMeta();
+                        vipMeta.setDisplayName(CC.translate("&b&lVIP"));
+                        List<String> vipLore = new ArrayList<>();
+                        vipLore.add(CC.translate("&7Estado: " + (block.isVip() ? "&aACTIVADO" : "&cDESACTIVADO")));
+                        vipLore.add("");
+                        vipLore.add(CC.translate("&7Los bloques VIP solo se muestran"));
+                        vipLore.add(CC.translate("&7en el menú VIP de /rebirth"));
+                        vipLore.add("");
+                        vipLore.add(CC.translate("&a[CLICK PARA CAMBIAR]"));
+                        vipMeta.setLore(vipLore);
+                        vipButton.setItemMeta(vipMeta);
+                        contents.set(2, 2, ClickableItem.of(vipButton, e -> {
+                            block.setVip(!block.isVip());
                             RebirthBlockManager.getInstance().saveBlock(block);
-                            player.sendMessage(CC.translate("&a✓ Bloque &e" + block.getName() + " &aahora " + (block.isSaveLevel() ? "&aGUARDA NIVEL" : "&cNO GUARDA NIVEL")));
+                            player.sendMessage(CC.translate("&a✓ Bloque &e" + block.getName() + " &aahora " + (block.isVip() ? "&aVIP" : "&cNO VIP")));
                             createBlockMenu(blockId).open(player);
                         }));
 
@@ -274,7 +294,13 @@ public class RebirthBlockMenus {
                         ItemMeta backMeta = back.getItemMeta();
                         backMeta.setDisplayName(CC.translate("&b← Atrás"));
                         back.setItemMeta(backMeta);
-                        contents.set(2, 8, ClickableItem.of(back, e -> createBlockListMenu(1).open(player)));
+                        contents.set(2, 8, ClickableItem.of(back, e -> {
+                            if (block.isVip()) {
+                                RebirthPlayerMenus.createVipBlocksMenu(player).open(player);
+                            } else {
+                                createBlockListMenu(1).open(player);
+                            }
+                        }));
                     }
 
                     @Override
@@ -286,7 +312,7 @@ public class RebirthBlockMenus {
                 .build();
     }
 
-    public static SmartInventory createRebirthListMenu(int blockId, int page) {
+    public static SmartInventory createRebirthListMenu(String blockId, int page) {
         RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
         if (block == null) return null;
 
@@ -375,7 +401,7 @@ public class RebirthBlockMenus {
                 .build();
     }
 
-    public static SmartInventory createDeleteConfirmMenu(int blockId) {
+    public static SmartInventory createDeleteConfirmMenu(String blockId) {
         RebirthBlock block = RebirthBlockManager.getInstance().getBlock(blockId);
         if (block == null) return null;
 

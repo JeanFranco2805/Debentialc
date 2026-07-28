@@ -107,7 +107,6 @@ public class RebirthAdminMenus {
                         blocksMeta.setLore(Arrays.asList(
                                 CC.translate("&7Crea bloques de rebirths"),
                                 CC.translate("&7Cada bloque contiene sus rebirths"),
-                                CC.translate("&7y define si guardan nivel"),
                                 "",
                                 CC.translate("&e[CLICK PARA GESTIONAR]")
                         ));
@@ -249,9 +248,8 @@ public class RebirthAdminMenus {
                         infoLore.add(CC.translate("&7Multiplicador: &fx" + String.format("%.2f", rebirth.getMultiplier())));
                         if (assignedBlock != null) {
                             infoLore.add(CC.translate("&7Bloque: &f" + assignedBlock.getName()));
-                            infoLore.add(CC.translate("&7Guarda nivel: " + (assignedBlock.isSaveLevel() ? "&aSí" : "&cNo")));
                         } else {
-                            infoLore.add(CC.translate("&7Bloque: &7Ninguno (reinicia con jrmcrei)"));
+                            infoLore.add(CC.translate("&7Bloque: &7Ninguno"));
                         }
                         infoMeta.setLore(infoLore);
                         info.setItemMeta(infoMeta);
@@ -342,6 +340,26 @@ public class RebirthAdminMenus {
                             createCommandsMenu(rebirthId, reopenEditMenu).open(player);
                         }));
 
+                        ItemStack statsButton = new ItemStack(Material.REDSTONE);
+                        ItemMeta statsMeta = statsButton.getItemMeta();
+                        statsMeta.setDisplayName(CC.translate("&c&lBonus Stats"));
+                        List<String> statsLore = new ArrayList<>();
+                        statsLore.add(CC.translate("&7Aplica a STR, DEX, CON, SPI, WIL"));
+                        statsLore.add(CC.translate("&7al desbloquear este rebirth"));
+                        statsLore.add("");
+                        if (rebirth.getStatBonusMultiplier() > 0) {
+                            statsLore.add(CC.translate("&7Actual: &f" + rebirth.getStatBonusOperation() + " " + rebirth.getStatBonusMultiplier()));
+                        } else {
+                            statsLore.add(CC.translate("&cSin bonus configurado"));
+                        }
+                        statsLore.add("");
+                        statsLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        statsMeta.setLore(statsLore);
+                        statsButton.setItemMeta(statsMeta);
+                        contents.set(2, 3, ClickableItem.of(statsButton, e -> {
+                            RebirthInputManager.startInput(player, rebirthId, RebirthInputManager.InputType.STAT_BONUS_OPERATION, reopenEditMenu);
+                        }));
+
                         ItemStack deleteButton = new ItemStack(Material.ANVIL);
                         ItemMeta deleteMeta = deleteButton.getItemMeta();
                         deleteMeta.setDisplayName(CC.translate("&c&lEliminar Rebirth"));
@@ -351,7 +369,7 @@ public class RebirthAdminMenus {
                                 CC.translate("&c[CLICK PARA ELIMINAR]")
                         ));
                         deleteButton.setItemMeta(deleteMeta);
-                        contents.set(2, 4, ClickableItem.of(deleteButton, e -> {
+                        contents.set(2, 5, ClickableItem.of(deleteButton, e -> {
                             createDeleteConfirmMenu(rebirthId).open(player);
                         }));
 

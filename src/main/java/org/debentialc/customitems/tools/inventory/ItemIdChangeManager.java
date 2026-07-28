@@ -153,7 +153,7 @@ public class ItemIdChangeManager {
         item.setMaterial(newMaterialId);
         item.setDurabilityData(newData);
 
-        CustomItemStorage storage = new CustomItemStorage();
+        CustomItemStorage storage = CustomItemStorage.getInstance();
         storage.saveItem(item);
 
         player.sendMessage("");
@@ -182,7 +182,7 @@ public class ItemIdChangeManager {
 
         armor.setMaterial(newMaterialId);
 
-        CustomArmorStorage storage = new CustomArmorStorage();
+        CustomArmorStorage storage = CustomArmorStorage.getInstance();
         storage.saveArmor(armor);
 
         RegisterItem.items.put(armorId, armor);

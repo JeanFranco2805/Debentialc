@@ -13,6 +13,8 @@ public class RebirthInputManager {
     public enum InputType {
         REQUIRED_LEVEL,
         TP_BONUS_PERCENT,
+        STAT_BONUS_OPERATION,
+        STAT_BONUS_VALUE,
         DISPLAY_NAME,
         ADD_REGION,
         REMOVE_REGION,
@@ -33,6 +35,7 @@ public class RebirthInputManager {
     }
 
     private static final HashMap<UUID, InputState> playersInputting = new HashMap<>();
+    private static final HashMap<UUID, String> pendingStatOperation = new HashMap<>();
 
     public static void startInput(Player player, int rebirthId, InputType type) {
         startInput(player, rebirthId, type, null);
@@ -51,6 +54,16 @@ public class RebirthInputManager {
             case TP_BONUS_PERCENT:
                 player.sendMessage(CC.translate("&3&l Ingresa el porcentaje de bonus de TPs"));
                 player.sendMessage(CC.translate("&7 Ejemplo: &f15 &7(15%)"));
+                break;
+            case STAT_BONUS_OPERATION:
+                player.sendMessage(CC.translate("&3&l Ingresa la operación del bonus de stats"));
+                player.sendMessage(CC.translate("&7 Opciones: &f* &7(multiplicar) o &f+ &7(sumar)"));
+                player.sendMessage(CC.translate("&7 Escribe &c'eliminar' &7para quitar el bonus"));
+                break;
+            case STAT_BONUS_VALUE:
+                player.sendMessage(CC.translate("&3&l Ingresa el valor del bonus de stats"));
+                player.sendMessage(CC.translate("&7 Ejemplo: &f1.2 &7(o &f100&7)"));
+                player.sendMessage(CC.translate("&7 Escribe &c'eliminar' &7para quitar el bonus"));
                 break;
             case DISPLAY_NAME:
                 player.sendMessage(CC.translate("&3&l Ingresa el nombre mostrado"));
@@ -106,6 +119,12 @@ public class RebirthInputManager {
             case TP_BONUS_PERCENT:
                 success = handleTpBonusPercent(player, rebirth, input);
                 break;
+            case STAT_BONUS_OPERATION:
+                success = handleStatBonusOperation(player, rebirth, input, state.onComplete);
+                break;
+            case STAT_BONUS_VALUE:
+                success = handleStatBonusValue(player, rebirth, input, state.onComplete);
+                break;
             case DISPLAY_NAME:
                 success = handleDisplayName(player, rebirth, input);
                 break;
@@ -123,7 +142,7 @@ public class RebirthInputManager {
                 break;
         }
 
-        if (success) {
+        if (success && state.type != InputType.STAT_BONUS_OPERATION) {
             finishInput(player);
             if (state.onComplete != null) {
                 state.onComplete.run();
@@ -203,8 +222,69 @@ public class RebirthInputManager {
     }
 
     public static void cancelInput(Player player) {
+        pendingStatOperation.remove(player.getUniqueId());
         player.sendMessage(CC.translate("&c✗ Cancelado."));
         finishInput(player);
+    }
+
+    private static boolean handleStatBonusOperation(Player player, Rebirth rebirth, String input, Runnable onComplete) {
+        if (input.equalsIgnoreCase("eliminar")) {
+            rebirth.setStatBonusMultiplier(0.0);
+            rebirth.setStatBonusOperation("*");
+            RebirthManager.getInstance().saveRebirth(rebirth);
+            player.sendMessage(CC.translate("&a✓ Bonus de stats eliminado de &e" + rebirth.getId()));
+            finishInput(player);
+            if (onComplete != null) onComplete.run();
+            return true;
+        }
+
+        if (!"*".equals(input) && !"+".equals(input)) {
+            player.sendMessage(CC.translate("&c✗ Operación inválida. Usa &f* &7o &f+"));
+            return false;
+        }
+
+        boolean operationChanged = !input.equals(rebirth.getStatBonusOperation());
+        rebirth.setStatBonusOperation(input);
+        if (operationChanged) {
+            rebirth.setStatBonusMultiplier(0.0);
+            RebirthManager.getInstance().saveRebirth(rebirth);
+            player.sendMessage(CC.translate("&a✓ Operación cambiada a &f" + input + "&a. Valor anterior reiniciado a 0. Ingresa el nuevo valor."));
+        } else {
+            player.sendMessage(CC.translate("&a✓ Operación actual: &f" + input + "&a. Ingresa el valor."));
+        }
+
+        pendingStatOperation.put(player.getUniqueId(), input);
+        startInput(player, rebirth.getId(), InputType.STAT_BONUS_VALUE, onComplete);
+        return true;
+    }
+
+    private static boolean handleStatBonusValue(Player player, Rebirth rebirth, String input, Runnable onComplete) {
+        if (input.equalsIgnoreCase("eliminar")) {
+            rebirth.setStatBonusMultiplier(0.0);
+            rebirth.setStatBonusOperation("*");
+            RebirthManager.getInstance().saveRebirth(rebirth);
+            player.sendMessage(CC.translate("&a✓ Bonus de stats eliminado de &e" + rebirth.getId()));
+            pendingStatOperation.remove(player.getUniqueId());
+            return true;
+        }
+
+        try {
+            double value = Double.parseDouble(input);
+            if (value < 0) {
+                player.sendMessage(CC.translate("&c✗ El valor no puede ser negativo."));
+                return false;
+            }
+            String operation = pendingStatOperation.remove(player.getUniqueId());
+            if (operation == null) operation = rebirth.getStatBonusOperation();
+            rebirth.setStatBonusOperation(operation);
+            rebirth.setStatBonusMultiplier(value);
+            RebirthManager.getInstance().saveRebirth(rebirth);
+            player.sendMessage(CC.translate("&a✓ Bonus de stats de &e" + rebirth.getId() + " &aestablecido a &f" + operation + " " + value));
+            return true;
+        } catch (NumberFormatException e) {
+            player.sendMessage(CC.translate("&c✗ Número inválido."));
+            return false;
+        }
     }
 
     private static boolean handleAddCommand(Player player, Rebirth rebirth, String input) {

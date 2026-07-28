@@ -29,6 +29,7 @@ public class CustomItem {
     private boolean unbreakable = false;
 
     private boolean consumable = false;
+    private int cooldownSeconds = 0;
 
     private List<String> commands = new ArrayList<>();
 
@@ -39,6 +40,18 @@ public class CustomItem {
     private int attackDamage = -1;
 
     private String nbtData = null;
+
+    private String category = null;
+
+    // Rebirth/permission gating
+    private String requiredRebirthBlock = null;
+    private int requiredRebirthLevel = 0;
+    private String requiredPermission = null;
+
+    public CustomItem setCategory(String category) {
+        this.category = category;
+        return this;
+    }
 
     public CustomItem() {
         this.commands = new ArrayList<>();
@@ -107,6 +120,15 @@ public class CustomItem {
 
     public CustomItem setConsumable(boolean consumable) {
         this.consumable = consumable;
+        return this;
+    }
+
+    public int getCooldownSeconds() {
+        return cooldownSeconds;
+    }
+
+    public CustomItem setCooldownSeconds(int cooldownSeconds) {
+        this.cooldownSeconds = cooldownSeconds;
         return this;
     }
 

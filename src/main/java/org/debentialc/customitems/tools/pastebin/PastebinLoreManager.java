@@ -163,9 +163,7 @@ public class PastebinLoreManager {
 
         item.setLore(translatedLines);
 
-        org.debentialc.customitems.tools.storage.CustomItemStorage storage =
-                new org.debentialc.customitems.tools.storage.CustomItemStorage();
-        storage.saveItem(item);
+        org.debentialc.customitems.tools.storage.CustomItemStorage.getInstance().saveItem(item);
 
         return true;
     }
@@ -185,7 +183,7 @@ public class PastebinLoreManager {
         armor.setLore(translatedLines);
 
         org.debentialc.customitems.tools.storage.CustomArmorStorage storage =
-                new org.debentialc.customitems.tools.storage.CustomArmorStorage();
+                org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance();
         storage.saveArmor(armor);
 
         return true;
