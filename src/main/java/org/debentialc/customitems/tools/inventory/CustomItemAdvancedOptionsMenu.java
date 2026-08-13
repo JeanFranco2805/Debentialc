@@ -85,27 +85,50 @@ public class CustomItemAdvancedOptionsMenu {
                             createAdvancedOptionsMenu(itemId).open(player);
                         }));
 
-                        // COOLDOWN
-                        ItemStack cooldownButton = new ItemStack(Material.WATCH);
-                        ItemMeta cooldownMeta = cooldownButton.getItemMeta();
-                        cooldownMeta.setDisplayName(CC.translate("&6&lCooldown"));
-                        List<String> cooldownLore = new ArrayList<>();
-                        cooldownLore.add(CC.translate("&7Tiempo de espera entre usos"));
-                        cooldownLore.add(CC.translate("&7Solo aplica si el item es consumible"));
-                        cooldownLore.add("");
-                        if (item.getCooldownSeconds() > 0) {
-                            cooldownLore.add(CC.translate("&7Actual: &f" + org.debentialc.boosters.core.BoosterParser.formatSecondsToTime(item.getCooldownSeconds())));
+                        // DELAY (antes Cooldown)
+                        ItemStack delayButton = new ItemStack(Material.WATCH);
+                        ItemMeta delayMeta = delayButton.getItemMeta();
+                        delayMeta.setDisplayName(CC.translate("&6&lDelay"));
+                        List<String> delayLore = new ArrayList<>();
+                        delayLore.add(CC.translate("&7Tiempo de espera entre usos"));
+                        delayLore.add(CC.translate("&7Solo aplica si el item es consumible"));
+                        delayLore.add("");
+                        if (item.getDelaySeconds() > 0) {
+                            delayLore.add(CC.translate("&7Actual: &f" + org.debentialc.boosters.core.BoosterParser.formatSecondsToTime(item.getDelaySeconds())));
                         } else {
-                            cooldownLore.add(CC.translate("&cSin cooldown"));
+                            delayLore.add(CC.translate("&cSin delay"));
+                        }
+                        delayLore.add("");
+                        delayLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        delayLore.add(CC.translate("&7Formato: 50m, 1h, 2d, 30s"));
+                        delayMeta.setLore(delayLore);
+                        delayButton.setItemMeta(delayMeta);
+                        contents.set(2, 2, ClickableItem.of(delayButton, e -> {
+                            player.closeInventory();
+                            ItemCooldownInputManager.startCooldownInput(player, itemId);
+                        }));
+
+                        // COOLDOWN (expiración real)
+                        ItemStack cooldownButton = new ItemStack(Material.BEDROCK);
+                        ItemMeta cooldownMeta = cooldownButton.getItemMeta();
+                        cooldownMeta.setDisplayName(CC.translate("&4&lCooldown"));
+                        List<String> cooldownLore = new ArrayList<>();
+                        cooldownLore.add(CC.translate("&7Tiempo de vida real del item"));
+                        cooldownLore.add(CC.translate("&7Al expirar desaparece de cualquier lugar"));
+                        cooldownLore.add("");
+                        if (item.getExpirationSeconds() > 0) {
+                            cooldownLore.add(CC.translate("&7Actual: &f" + org.debentialc.boosters.core.BoosterParser.formatSecondsToTime(item.getExpirationSeconds())));
+                        } else {
+                            cooldownLore.add(CC.translate("&cSin cooldown de expiración"));
                         }
                         cooldownLore.add("");
                         cooldownLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
-                        cooldownLore.add(CC.translate("&7Formato: 50m, 1h, 2d, 30s"));
+                        cooldownLore.add(CC.translate("&7Formato: 30m, 1h, 2d, 7d, 30s"));
                         cooldownMeta.setLore(cooldownLore);
                         cooldownButton.setItemMeta(cooldownMeta);
-                        contents.set(2, 2, ClickableItem.of(cooldownButton, e -> {
+                        contents.set(2, 3, ClickableItem.of(cooldownButton, e -> {
                             player.closeInventory();
-                            ItemCooldownInputManager.startCooldownInput(player, itemId);
+                            ItemExpirationInputManager.startExpirationInput(player, itemId);
                         }));
 
                         // COMANDOS
@@ -129,7 +152,7 @@ public class CustomItemAdvancedOptionsMenu {
                         commandsLore.add(CC.translate("&7@p = A quien apunta"));
                         commandsMeta.setLore(commandsLore);
                         commandsButton.setItemMeta(commandsMeta);
-                        contents.set(2, 3, ClickableItem.of(commandsButton, e -> {
+                        contents.set(2, 4, ClickableItem.of(commandsButton, e -> {
                             createCommandsMenu(itemId).open(player);
                         }));
 
@@ -175,51 +198,26 @@ public class CustomItemAdvancedOptionsMenu {
                             org.debentialc.customitems.tools.inventory.ScriptManagementMenu.createScriptMenu(itemId).open(player);
                         }));
 
-                        // REBIRTH
-                        ItemStack rebirthButton = new ItemStack(Material.ENDER_PEARL);
-                        ItemMeta rebirthMeta = rebirthButton.getItemMeta();
-                        rebirthMeta.setDisplayName(CC.translate("&5&lRebirth Requerido"));
-                        List<String> rebirthLore = new ArrayList<>();
-                        rebirthLore.add(CC.translate("&7Restringe el uso/recogida del item"));
-                        rebirthLore.add(CC.translate("&7según el progreso de rebirth."));
-                        rebirthLore.add("");
-                        if (item.getRequiredRebirthBlock() != null && !item.getRequiredRebirthBlock().isEmpty() && item.getRequiredRebirthLevel() > 0) {
-                            rebirthLore.add(CC.translate("&7Bloque: &f" + item.getRequiredRebirthBlock()));
-                            rebirthLore.add(CC.translate("&7Nivel local: &f" + item.getRequiredRebirthLevel()));
-                        } else {
-                            rebirthLore.add(CC.translate("&cSin requisito de rebirth"));
-                        }
-                        rebirthLore.add("");
-                        rebirthLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
-                        rebirthLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
-                        rebirthMeta.setLore(rebirthLore);
-                        rebirthButton.setItemMeta(rebirthMeta);
-                        contents.set(3, 2, ClickableItem.of(rebirthButton, e -> {
-                            player.closeInventory();
-                            CustomRequirementInputManager.startRebirthBlockInput(player, "item", itemId);
-                        }));
-
-                        // PERMISO
-                        ItemStack permButton = new ItemStack(Material.TRIPWIRE_HOOK);
-                        ItemMeta permMeta = permButton.getItemMeta();
-                        permMeta.setDisplayName(CC.translate("&c&lPermiso Requerido"));
-                        List<String> permLore = new ArrayList<>();
-                        permLore.add(CC.translate("&7Restringe el uso/recogida del item"));
-                        permLore.add(CC.translate("&7a jugadores con un permiso."));
-                        permLore.add("");
-                        if (item.getRequiredPermission() != null && !item.getRequiredPermission().isEmpty()) {
-                            permLore.add(CC.translate("&7Permiso: &f" + item.getRequiredPermission()));
-                        } else {
-                            permLore.add(CC.translate("&cSin permiso requerido"));
-                        }
-                        permLore.add("");
-                        permLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
-                        permLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
-                        permMeta.setLore(permLore);
-                        permButton.setItemMeta(permMeta);
-                        contents.set(3, 6, ClickableItem.of(permButton, e -> {
-                            player.closeInventory();
-                            CustomRequirementInputManager.startPermissionInput(player, "item", itemId);
+                        // PROPIETARIO
+                        ItemStack ownerButton = new ItemStack(Material.NAME_TAG);
+                        ItemMeta ownerMeta = ownerButton.getItemMeta();
+                        ownerMeta.setDisplayName(CC.translate("&a&lPropietario"));
+                        List<String> ownerLore = new ArrayList<>();
+                        ownerLore.add(CC.translate("&7Solo el jugador que recibe el item"));
+                        ownerLore.add(CC.translate("&7podrá usarlo/equiparlo."));
+                        ownerLore.add("");
+                        ownerLore.add(CC.translate(item.isOwnerOnly() ? "&a✓ ACTIVADO" : "&c✗ DESACTIVADO"));
+                        ownerLore.add("");
+                        ownerLore.add(CC.translate("&a[CLICK PARA ALTERNAR]"));
+                        ownerMeta.setLore(ownerLore);
+                        ownerButton.setItemMeta(ownerMeta);
+                        contents.set(3, 4, ClickableItem.of(ownerButton, e -> {
+                            item.setOwnerOnly(!item.isOwnerOnly());
+                            CustomItemStorage.getInstance().saveItem(item);
+                            player.sendMessage("");
+                            player.sendMessage(CC.translate(item.isOwnerOnly() ? "&a✓ El item ahora tiene propietario" : "&c✓ El item ya no tiene propietario"));
+                            player.sendMessage("");
+                            createAdvancedOptionsMenu(itemId).open(player);
                         }));
 
                         // BOTÓN ATRÁS

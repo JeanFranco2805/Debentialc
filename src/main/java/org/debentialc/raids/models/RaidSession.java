@@ -28,13 +28,18 @@ public class RaidSession {
     private String winner;
 
     public RaidSession(String sessionId, Raid raid, Party party) {
+        this(sessionId, raid, party.getMembers().keySet());
+        this.party = party;
+    }
+
+    public RaidSession(String sessionId, Raid raid, Set<UUID> players) {
         this.sessionId = sessionId;
         this.raid = raid;
-        this.party = party;
+        this.party = null;
         this.currentWaveIndex = 0;
         this.status = RaidStatus.IN_PROGRESS;
         this.startTime = System.currentTimeMillis();
-        this.activePlayers = new HashSet<>(party.getMembers().keySet());
+        this.activePlayers = new HashSet<>(players);
         this.deadPlayers = new HashSet<>();
         this.leftPlayers = new HashSet<>();
     }

@@ -1,11 +1,15 @@
 package org.debentialc.customitems.commands;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomArmor;
+import org.debentialc.customitems.tools.nbt.CustomItemTagging;
 import org.debentialc.customitems.tools.nbt.NbtHandler;
+import org.debentialc.customitems.tools.storage.CustomArmorStorage;
 import org.debentialc.service.commands.BaseCommand;
 import org.debentialc.service.commands.Command;
 import org.debentialc.service.commands.CommandArgs;
@@ -78,6 +82,7 @@ public class RegisterItem extends BaseCommand {
                     player.sendMessage(CC.translate("&aItem lore updated successfully"));
 
                     items.put(ca.getId(),ca);
+                    CustomArmorStorage.getInstance().saveArmor(ca);
                     break;
                 case "setline":
                     StringBuilder loreline = new StringBuilder();
@@ -104,11 +109,24 @@ public class RegisterItem extends BaseCommand {
                     player.setItemInHand(item);
 
                     items.put(ca.getId(),ca);
+                    CustomArmorStorage.getInstance().saveArmor(ca);
 
                     break;
                 case "l":
                 case "list":
                     sendList(player, Integer.parseInt(command.getArgs(1)));
+                    break;
+                case "reload":
+                    CustomArmorStorage.getInstance().initialLoad();
+                    player.sendMessage(CC.translate("&aArmaduras recargadas desde: &f" + CustomArmorStorage.getInstance().getArmorFilePath()));
+                    break;
+                case "expiration":
+                case "expiracion":
+                    setExpiration(player, arg1);
+                    break;
+                case "give":
+                case "dar":
+                    giveArmor(player, arg1, command.getArgs(2), command.getArgs(3));
                     break;
                 case "rename":
                     text = new StringBuilder();
@@ -124,10 +142,14 @@ public class RegisterItem extends BaseCommand {
                     player.setItemInHand(item);
 
                     items.put(ca.getId(),ca);
+                    CustomArmorStorage.getInstance().saveArmor(ca);
                     break;
-                case "help":
                 case "effect":
                     ca = toItemCustom(player.getItemInHand());
+                    if (ca == null) {
+                        player.sendMessage(CC.translate("&cDebes sostener una armadura custom registrada."));
+                        break;
+                    }
                     String effect = command.getArgs(1).toUpperCase();
                     HashMap<String, Double> effects = ca.getEffects();
                     switch (effect){
@@ -141,7 +163,11 @@ public class RegisterItem extends BaseCommand {
                             effects.put("STAMINAREGEN", Double.parseDouble(command.getArgs(2)));
                             break;
                     }
+                    items.put(ca.getId(), ca);
+                    CustomArmorStorage.getInstance().saveArmor(ca);
+                    player.sendMessage(CC.translate("&aEfecto aplicado a la armadura."));
                     break;
+                case "help":
                 default:
                     sendHelp(player);
                     break;
@@ -167,8 +193,10 @@ public class RegisterItem extends BaseCommand {
         player.sendMessage(CC.translate("&e/ca plus <id> <value> <stat> &7- Additive bonus (+)."));
         player.sendMessage(CC.translate("&e/ca less <id> <value> <stat> &7- Subtractive bonus (-)."));
         player.sendMessage(CC.translate("&e/ca effect <effect> <value> &7- Regenerates a % of an attribute for the player (%)."));
+        player.sendMessage(CC.translate("&e/ca expiration <segundos> &7- Establece expiración en la armadura en tu mano (0 = sin expiración)."));
+        player.sendMessage(CC.translate("&e/ca give <id> <jugador> [cantidad] &7- Entrega una copia de la armadura a un jugador."));
         player.sendMessage(" ");
-        player.sendMessage(CC.translate("&7Available stats: &fstr&7, &fcon&7, &fdex&7, &fwill&7, &fmnd"));
+        player.sendMessage(CC.translate("&7Available stats: &fstr&7, &fcon&7, &fdex&7, &fwill&7, &fmnd&7, &fspi"));
         player.sendMessage(CC.translate("&8&l&m--------------------------------------"));
     }
 
@@ -218,6 +246,93 @@ public class RegisterItem extends BaseCommand {
         player.sendMessage(CC.translate("&aItem removed successfully"));
     }
 
+    private void setExpiration(Player player, String secondsStr) {
+        ItemStack item = player.getItemInHand();
+        if (item == null || item.getTypeId() == 0) {
+            player.sendMessage(CC.translate("&cDebes tener un item en la mano."));
+            return;
+        }
+        CustomArmor ca = toItemCustom(item);
+        if (ca == null) {
+            player.sendMessage(CC.translate("&cEl item en tu mano no es una armadura custom registrada."));
+            return;
+        }
+        int seconds;
+        try {
+            seconds = Integer.parseInt(secondsStr);
+        } catch (NumberFormatException e) {
+            player.sendMessage(CC.translate("&cDebes ingresar un número válido de segundos."));
+            return;
+        }
+        if (seconds < 0) {
+            player.sendMessage(CC.translate("&cLos segundos no pueden ser negativos."));
+            return;
+        }
+        ca.setExpirationSeconds(seconds);
+        items.put(ca.getId(), ca);
+        if (seconds > 0) {
+            item = CustomItemTagging.applyExpiration(item, seconds);
+        } else {
+            item = CustomItemTagging.removeExpiration(item);
+        }
+        player.setItemInHand(item);
+        CustomArmorStorage.getInstance().saveArmor(ca);
+        player.sendMessage(CC.translate("&aExpiración de &f" + ca.getId() + " &aestablecida a &f" + seconds + " &asegundos."));
+    }
+
+    private void giveArmor(Player sender, String id, String targetName, String amountStr) {
+        if (id == null || !items.containsKey(id)) {
+            sender.sendMessage(CC.translate("&cArmadura no encontrada: &f" + id));
+            return;
+        }
+        if (targetName == null) {
+            sender.sendMessage(CC.translate("&cUso: /ca give <id> <jugador> [cantidad]"));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            sender.sendMessage(CC.translate("&cJugador no encontrado o no está conectado: &f" + targetName));
+            return;
+        }
+        int amount = 1;
+        if (amountStr != null) {
+            try {
+                amount = Integer.parseInt(amountStr);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(CC.translate("&cCantidad inválida."));
+                return;
+            }
+        }
+        if (amount < 1) amount = 1;
+
+        CustomArmor armor = items.get(id);
+        ItemStack base = toItemStack(armor);
+        if (base == null) {
+            sender.sendMessage(CC.translate("&cError al construir la armadura &f" + id + "&c."));
+            return;
+        }
+
+        int delivered = 0;
+        for (int i = 0; i < amount; i++) {
+            ItemStack toGive = base.clone();
+            if (armor.isOwnerOnly()) {
+                toGive = CustomItemTagging.applyOwner(toGive, target);
+            }
+            HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(toGive);
+            if (!leftover.isEmpty()) {
+                for (ItemStack drop : leftover.values()) {
+                    target.getWorld().dropItemNaturally(target.getLocation(), drop);
+                }
+            }
+            delivered++;
+        }
+        target.updateInventory();
+
+        String displayName = armor.getDisplayName() != null ? armor.getDisplayName() : id;
+        sender.sendMessage(CC.translate("&aEntregado &f" + delivered + "x " + displayName + " &aa &f" + target.getName()));
+        target.sendMessage(CC.translate("&aRecibiste: &f" + delivered + "x " + displayName));
+    }
+
     public boolean isCustom(ItemStack item) {
         if (item == null || item.getTypeId() == 0) return false;
         NbtHandler nbt = new NbtHandler(item);
@@ -239,12 +354,39 @@ public class RegisterItem extends BaseCommand {
 
 
     public ItemStack toItemStack(CustomArmor item) {
+        if (item == null) return null;
         ItemStack itemStack = new ItemStack(item.getMaterial());
         ItemMeta meta = itemStack.getItemMeta();
         meta.setDisplayName(item.getDisplayName());
         meta.setLore(item.getLore());
         itemStack.setItemMeta(meta);
-        return itemStack;
+        return applyArmorTags(itemStack, item);
+    }
+
+    private ItemStack applyArmorTags(ItemStack itemStack, CustomArmor armor) {
+        NbtHandler nbt = new NbtHandler(itemStack);
+        nbt.setString("debentialc_id", armor.getId());
+        nbt.setString("debentialc_type", "armor");
+        if (armor.getRequiredRebirthBlock() != null && !armor.getRequiredRebirthBlock().isEmpty()) {
+            nbt.setString("debentialc_rebirth_block", armor.getRequiredRebirthBlock());
+        }
+        if (armor.getRequiredRebirthLevel() > 0) {
+            nbt.setInteger("debentialc_rebirth_level", armor.getRequiredRebirthLevel());
+        }
+        if (armor.getRequiredPermission() != null && !armor.getRequiredPermission().isEmpty()) {
+            nbt.setString("debentialc_permission", armor.getRequiredPermission());
+        }
+        ItemStack tagged = nbt.getItemStack();
+        ItemMeta meta = tagged.getItemMeta();
+        if (meta != null) {
+            if (armor.getDisplayName() != null) meta.setDisplayName(armor.getDisplayName());
+            if (armor.getLore() != null) meta.setLore(armor.getLore());
+            tagged.setItemMeta(meta);
+        }
+        if (armor.getExpirationSeconds() > 0) {
+            tagged = CustomItemTagging.applyExpiration(tagged, armor.getExpirationSeconds());
+        }
+        return tagged;
     }
 
     public void sendList(Player player, int page) {

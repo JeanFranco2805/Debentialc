@@ -5,6 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.debentialc.raids.menus.RaidCategoryChatInputManager;
 import org.debentialc.raids.menus.RaidChatInputManager;
 
 /**
@@ -19,21 +20,31 @@ public class RaidMenuChatListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-
-        if (!RaidChatInputManager.isInputting(player)) {
-            return;
-        }
-
         String message = event.getMessage().trim();
 
-        event.setCancelled(true);
-        event.getRecipients().clear();
+        if (RaidChatInputManager.isInputting(player)) {
+            event.setCancelled(true);
+            event.getRecipients().clear();
 
-        if (message.equalsIgnoreCase("cancelar") || message.equalsIgnoreCase("cancel")) {
-            RaidChatInputManager.cancelInput(player);
+            if (message.equalsIgnoreCase("cancelar") || message.equalsIgnoreCase("cancel")) {
+                RaidChatInputManager.cancelInput(player);
+                return;
+            }
+
+            RaidChatInputManager.processInput(player, message);
             return;
         }
 
-        RaidChatInputManager.processInput(player, message);
+        if (RaidCategoryChatInputManager.isInputting(player)) {
+            event.setCancelled(true);
+            event.getRecipients().clear();
+
+            if (message.equalsIgnoreCase("cancelar") || message.equalsIgnoreCase("cancel")) {
+                RaidCategoryChatInputManager.cancelInput(player);
+                return;
+            }
+
+            RaidCategoryChatInputManager.processInput(player, message);
+        }
     }
 }

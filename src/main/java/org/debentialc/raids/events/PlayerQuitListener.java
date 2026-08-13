@@ -6,6 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.debentialc.raids.managers.RaidSessionManager;
 import org.debentialc.raids.managers.PartyManager;
+import org.debentialc.raids.menus.RaidCategoryChatInputManager;
 import org.debentialc.raids.menus.RaidChatInputManager;
 import org.debentialc.raids.models.RaidSession;
 import org.debentialc.raids.models.Party;
@@ -33,6 +34,9 @@ public class PlayerQuitListener implements Listener {
 
         if (RaidChatInputManager.isInputting(player)) {
             RaidChatInputManager.cancelInput(player);
+        }
+        if (RaidCategoryChatInputManager.isInputting(player)) {
+            RaidCategoryChatInputManager.cancelInput(player);
         }
     }
 

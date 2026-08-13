@@ -34,6 +34,11 @@ public class CustomArmor {
     private int requiredRebirthLevel = 0;
     private String requiredPermission = null;
 
+    private boolean ownerOnly = false;
+
+    // Tiempo de expiración en segundos (0 = no expira)
+    private int expirationSeconds = 0;
+
     public CustomArmor setMaterial(int material) {
         this.material = material;
         return this;
@@ -71,6 +76,20 @@ public class CustomArmor {
 
     public CustomArmor setUnbreakable(boolean unbreakable) {
         this.unbreakable = unbreakable;
+        return this;
+    }
+
+    public boolean isOwnerOnly() {
+        return ownerOnly;
+    }
+
+    public CustomArmor setOwnerOnly(boolean ownerOnly) {
+        this.ownerOnly = ownerOnly;
+        return this;
+    }
+
+    public CustomArmor setExpirationSeconds(int expirationSeconds) {
+        this.expirationSeconds = expirationSeconds;
         return this;
     }
 

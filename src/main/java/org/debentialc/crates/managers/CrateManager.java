@@ -5,10 +5,12 @@ import com.gmail.filoghost.holograms.api.HolographicDisplaysAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+
 import org.debentialc.Main;
 import org.debentialc.crates.models.Crate;
 import org.debentialc.crates.models.CrateItem;
@@ -78,6 +80,32 @@ public class CrateManager {
         rarities.put(id, rarity);
         storage.saveRarities(rarities);
         return true;
+    }
+
+    public boolean updateRarity(String id, String displayName, Double weight, String color, Boolean announce) {
+        id = id.toUpperCase();
+        CrateRarity rarity = rarities.get(id);
+        if (rarity == null) {
+            return false;
+        }
+        if (displayName != null) {
+            rarity.setDisplayName(displayName);
+        }
+        if (weight != null) {
+            rarity.setWeight(weight);
+        }
+        if (color != null) {
+            rarity.setColor(color);
+        }
+        if (announce != null) {
+            rarity.setAnnounce(announce);
+        }
+        storage.saveRarities(rarities);
+        return true;
+    }
+
+    public boolean setRarityWeight(String id, double weight) {
+        return updateRarity(id, null, weight, null, null);
     }
 
     public boolean deleteRarity(String id) {
@@ -223,7 +251,7 @@ public class CrateManager {
         if (base64 == null) {
             return false;
         }
-        CrateItem crateItem = new CrateItem(itemId.toLowerCase(), rarityId.toUpperCase(), base64);
+        CrateItem crateItem = new CrateItem(itemId.toLowerCase(), rarityId.toUpperCase(), base64, 0.0);
         crate.getItems().put(crateItem.getId(), crateItem);
         storage.saveCrate(crate);
         return true;
@@ -266,7 +294,7 @@ public class CrateManager {
         if (crate == null) {
             return null;
         }
-        ItemStack key = new ItemStack(131, 1);
+        ItemStack key = new ItemStack(4426, 1);
         org.bukkit.inventory.meta.ItemMeta meta = key.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(CC.translate("&b&lLlave Misteriosa &8C#" + crate.getId()));
@@ -306,32 +334,96 @@ public class CrateManager {
 
     public CrateItem openCrate(String crateId) {
         Crate crate = crates.get(crateId.toLowerCase());
+        return rollItem(crate);
+    }
+
+    public CrateItem rollItem(Crate crate) {
         if (crate == null || crate.getItems().isEmpty()) {
             return null;
         }
-        double totalWeight = 0;
-        for (CrateItem item : crate.getItems().values()) {
-            CrateRarity rarity = rarities.get(item.getRarityId());
-            if (rarity != null) {
-                totalWeight += rarity.getWeight();
+        List<CrateItem> items = new ArrayList<>(crate.getItems().values());
+
+        // Si hay items con probabilidad personalizada, se usan esas.
+        double totalChance = 0;
+        for (CrateItem item : items) {
+            if (item.getChance() > 0) totalChance += item.getChance();
+        }
+        if (totalChance > 0) {
+            double random = Math.random() * totalChance;
+            double current = 0;
+            for (CrateItem item : items) {
+                if (item.getChance() <= 0) continue;
+                current += item.getChance();
+                if (random <= current) return item;
             }
+            return items.get(items.size() - 1);
+        }
+
+        // Fallback: usar pesos de rareza
+        double totalWeight = 0;
+        for (CrateItem item : items) {
+            CrateRarity rarity = rarities.get(item.getRarityId());
+            if (rarity != null) totalWeight += rarity.getWeight();
         }
         if (totalWeight <= 0) {
-            return null;
+            return items.get(0);
         }
         double random = Math.random() * totalWeight;
         double current = 0;
-        for (CrateItem item : crate.getItems().values()) {
+        for (CrateItem item : items) {
             CrateRarity rarity = rarities.get(item.getRarityId());
-            if (rarity == null) {
-                continue;
-            }
+            if (rarity == null) continue;
             current += rarity.getWeight();
-            if (random <= current) {
-                return item;
-            }
+            if (random <= current) return item;
         }
-        return crate.getItems().values().iterator().next();
+        return items.get(items.size() - 1);
+    }
+
+    public double getTotalChance(Crate crate) {
+        double total = 0;
+        for (CrateItem item : crate.getItems().values()) {
+            if (item.getChance() > 0) total += item.getChance();
+        }
+        return total;
+    }
+
+    public double getItemChancePercent(Crate crate, CrateItem item) {
+        double total = getTotalChance(crate);
+        if (total <= 0) {
+            // Fallback: rareza
+            double totalWeight = 0;
+            for (CrateItem i : crate.getItems().values()) {
+                CrateRarity rarity = rarities.get(i.getRarityId());
+                if (rarity != null) totalWeight += rarity.getWeight();
+            }
+            CrateRarity rarity = rarities.get(item.getRarityId());
+            if (totalWeight <= 0 || rarity == null) return 0;
+            return Math.round((rarity.getWeight() / totalWeight) * 1000.0) / 10.0;
+        }
+        if (item.getChance() <= 0) return 0;
+        return Math.round((item.getChance() / total) * 1000.0) / 10.0;
+    }
+
+    public void giveCrateReward(Player player, Crate crate, CrateItem won) {
+        if (won == null) return;
+        ItemStack reward = CrateItemSerializer.itemFromBase64(won.getItemBase64());
+        if (reward == null) {
+            player.sendMessage(CC.translate("&c✗ Error al crear el item ganado."));
+            return;
+        }
+        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(reward);
+        for (ItemStack drop : leftover.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), drop);
+        }
+        player.playSound(player.getLocation(), Sound.LEVEL_UP, 1.0f, 1.0f);
+        player.sendMessage(CC.translate("&a✓ ¡Has abierto la crate &f" + crate.getDisplayName() + "&a!"));
+        CrateRarity rarity = getRarity(won.getRarityId());
+        if (rarity != null && rarity.isAnnounce()) {
+            String itemName = reward.hasItemMeta() && reward.getItemMeta().hasDisplayName()
+                    ? reward.getItemMeta().getDisplayName()
+                    : reward.getType().name();
+            Bukkit.broadcastMessage(CC.translate(rarity.getColor() + "¡" + player.getName() + " ha obtenido " + itemName + " de " + crate.getDisplayName() + "!"));
+        }
     }
 
     public void giveKey(Player player, String crateId, int amount) {

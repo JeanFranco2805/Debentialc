@@ -1,10 +1,15 @@
 package org.debentialc.raids.managers;
 
 import noppes.npcs.api.AbstractNpcAPI;
+import noppes.npcs.api.IWorld;
 import noppes.npcs.api.entity.ICustomNpc;
+import noppes.npcs.api.entity.IEntity;
 import noppes.npcs.scripted.NpcAPI;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.craftbukkit.v1_7_R4.CraftWorld;
 import org.debentialc.raids.models.SpawnPoint;
 import org.debentialc.raids.models.Wave;
 
@@ -54,32 +59,96 @@ public class NPCSpawnManager {
     private static ICustomNpc spawnNpc(Location location, String npcName, int npcTab) {
         try {
             World world = location.getWorld();
-            AbstractNpcAPI api = NpcAPI.Instance();
+            if (world == null) {
+                System.out.println("[Raids] ERROR: mundo nulo para spawn de '" + npcName + "'");
+                return null;
+            }
 
+            AbstractNpcAPI api = NpcAPI.Instance();
+            if (api == null) {
+                System.out.println("[Raids] ERROR: AbstractNpcAPI.Instance() retornó null");
+                return null;
+            }
+
+            double x = location.getX();
+            double y = location.getY();
+            double z = location.getZ();
             int bx = location.getBlockX();
-            int by = location.getBlockY();
             int bz = location.getBlockZ();
 
+            // Asegurar que el chunk esté cargado antes de spawnear
+            Chunk chunk = world.getChunkAt(bx >> 4, bz >> 4);
+            if (!chunk.isLoaded()) {
+                chunk.load();
+                System.out.println(String.format(
+                        "[Raids] Chunk cargado para spawn en %d,%d", bx >> 4, bz >> 4
+                ));
+            }
+
             System.out.println(String.format(
-                    "[Raids] Spawneando NPC '%s' (tab=%d) en bloque %d,%d,%d (origen: %.2f,%.2f,%.2f)",
-                    npcName, npcTab, bx, by, bz,
-                    location.getX(), location.getY(), location.getZ()
+                    "[Raids] Spawneando NPC '%s' (tab=%d) en %.2f,%.2f,%.2f (bloque %d,%d,%d) mundo=%s",
+                    npcName, npcTab, x, y, z, bx, location.getBlockY(), bz,
+                    world.getName()
             ));
 
-            ICustomNpc npc = (ICustomNpc) api.getIWorld(world.getEnvironment().getId()).spawnClone(
-                    bx,
-                    by,
-                    bz,
-                    npcTab,
-                    npcName
-            );
+            // Usar el ID de dimensión real del mundo NMS, no el environment ID de Bukkit.
+            // Esto es necesario para mundos creados por Multiverse, que comparten Environment.NORMAL
+            // pero tienen dimension IDs distintos.
+            int dimensionId = ((CraftWorld) world).getHandle().dimension;
+            System.out.println(String.format(
+                    "[Raids] Mundo=%s dimensionId=%d environmentId=%d",
+                    world.getName(), dimensionId, world.getEnvironment().getId()
+            ));
+
+            IWorld iWorld = api.getIWorld(dimensionId);
+
+            // Método 1: Usar ICloneHandler.spawn, igual que /kam clone spawn.
+            // Este lee el clon del ServerCloneController global y funciona en cualquier mundo.
+            ICustomNpc npc = null;
+            try {
+                IEntity entity = api.getClones().spawn(
+                        x,
+                        y,
+                        z,
+                        npcTab,
+                        npcName,
+                        iWorld
+                );
+                if (entity instanceof ICustomNpc) {
+                    npc = (ICustomNpc) entity;
+                }
+            } catch (Exception e) {
+                System.out.println("[Raids] ICloneHandler.spawn falló: " + e.getMessage());
+            }
+
+            // Fallback al método original por si acaso
+            if (npc == null) {
+                System.out.println("[Raids] Fallback a spawnClone");
+                IEntity entity = iWorld.spawnClone(bx, location.getBlockY(), bz, npcTab, npcName);
+                if (entity instanceof ICustomNpc) {
+                    npc = (ICustomNpc) entity;
+                }
+            }
 
             if (npc != null) {
                 npc.setName(npcName);
+
+                // Forzar posición exacta (double) en entidad Bukkit
+                for (Entity e : world.getEntities()) {
+                    if (e.getEntityId() == npc.getEntityId()) {
+                        e.teleport(location);
+                        break;
+                    }
+                }
+
+                System.out.println(String.format(
+                        "[Raids] OK: NPC '%s' spawneado con entityId=%d", npcName, npc.getEntityId()
+                ));
                 return npc;
             } else {
-                System.out.println("[Raids] ERROR: spawnClone retornó null para '" + npcName
-                        + "' tab=" + npcTab + " en " + bx + "," + by + "," + bz);
+                System.out.println("[Raids] ERROR: No se pudo spawnear el NPC '" + npcName
+                        + "' tab=" + npcTab + " en " + bx + "," + location.getBlockY() + "," + bz
+                        + " (mundo=" + world.getName() + ")");
             }
 
         } catch (Exception e) {

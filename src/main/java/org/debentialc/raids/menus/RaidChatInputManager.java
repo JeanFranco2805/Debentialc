@@ -1,7 +1,10 @@
 package org.debentialc.raids.menus;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.debentialc.customitems.commands.CustomItemCommand;
+import org.debentialc.raids.managers.RaidConfig;
 import org.debentialc.raids.managers.RaidManager;
 import org.debentialc.raids.managers.RaidStorageManager;
 import org.debentialc.raids.models.Raid;
@@ -83,7 +86,8 @@ public class RaidChatInputManager {
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         player.sendMessage(CC.translate("&6&l  Crear Nueva Raid"));
         player.sendMessage("");
-        player.sendMessage(CC.translate("&7  Paso 1/3: Ingresa el &fnombre &7de la raid"));
+        player.sendMessage(CC.translate("&7  Paso 1/3: Ingresa el &fID &7de la raid"));
+        player.sendMessage(CC.translate("&7  Ejemplo: &fRAID_SSJF"));
         player.sendMessage(CC.translate("&7  Escribe &c'cancelar' &7para abortar"));
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         player.sendMessage("");
@@ -93,8 +97,33 @@ public class RaidChatInputManager {
         playersInputting.put(player.getUniqueId(), new RaidInputState("rename", raidId));
         player.sendMessage("");
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
-        player.sendMessage(CC.translate("&e&l  Renombrar Raid"));
-        player.sendMessage(CC.translate("&7  Ingresa el nuevo nombre"));
+        player.sendMessage(CC.translate("&e&l  Cambiar Nombre Visible"));
+        player.sendMessage(CC.translate("&7  Ingresa el nombre visible en los menús"));
+        player.sendMessage(CC.translate("&7  Deja vacío o escribe '-' para mostrar el ID"));
+        player.sendMessage(CC.translate("&7  Escribe &c'cancelar' &7para abortar"));
+        player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage("");
+    }
+
+    public static void startRaidIdInput(Player player, String raidId) {
+        playersInputting.put(player.getUniqueId(), new RaidInputState("change_id", raidId));
+        player.sendMessage("");
+        player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage(CC.translate("&e&l  Cambiar ID de Raid"));
+        player.sendMessage(CC.translate("&7  Ingresa el nuevo ID"));
+        player.sendMessage(CC.translate("&7  Ejemplo: &fRAID_NUEVO"));
+        player.sendMessage(CC.translate("&7  Escribe &c'cancelar' &7para abortar"));
+        player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage("");
+    }
+
+    public static void startRaidMenuItemInput(Player player, String raidId) {
+        playersInputting.put(player.getUniqueId(), new RaidInputState("set_menu_item", raidId));
+        player.sendMessage("");
+        player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage(CC.translate("&e&l  Cambiar Ícono de Raid"));
+        player.sendMessage(CC.translate("&7  Ingresa el material o ID de custom item"));
+        player.sendMessage(CC.translate("&7  Ejemplos: &fDIAMOND_SWORD &7o &f6207"));
         player.sendMessage(CC.translate("&7  Escribe &c'cancelar' &7para abortar"));
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         player.sendMessage("");
@@ -138,14 +167,13 @@ public class RaidChatInputManager {
     public static void startSpawnPointInput(Player player, String raidId, int waveIndex) {
         RaidInputState state = new RaidInputState("spawn_point", raidId, waveIndex);
         state.step = 0;
-        // Guardar la ubicación del jugador ahora (se usará como spawn point)
-        state.savedLocation = player.getLocation().clone();
         playersInputting.put(player.getUniqueId(), state);
         player.sendMessage("");
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         player.sendMessage(CC.translate("&6&l  Crear Punto de Spawn"));
-        player.sendMessage(CC.translate("&7  Tu posición actual se guardó como spawn"));
         player.sendMessage(CC.translate("&7  Paso 1/3: Ingresa el &fnombre del NPC"));
+        player.sendMessage(CC.translate("&7  Paso 2/3: Ingresa el &ftab del NPC"));
+        player.sendMessage(CC.translate("&7  La posición se guardará al ingresar la cantidad"));
         player.sendMessage(CC.translate("&7  Escribe &c'cancelar' &7para abortar"));
         player.sendMessage(CC.translate("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         player.sendMessage("");
@@ -201,6 +229,12 @@ public class RaidChatInputManager {
                         case "rename":
                             processRename(player, input, state);
                             break;
+                        case "change_id":
+                            processChangeRaidId(player, input, state);
+                            break;
+                        case "set_menu_item":
+                            processSetMenuItem(player, input, state);
+                            break;
                         case "description":
                             processDescription(player, input, state);
                             break;
@@ -228,13 +262,18 @@ public class RaidChatInputManager {
     private static void processCreateRaid(Player player, String input, RaidInputState state) {
         switch (state.step) {
             case 0:
-                if (input.trim().isEmpty() || input.length() > 30) {
-                    player.sendMessage(CC.translate("&c✗ Nombre: 1-30 caracteres"));
+                String raidId = input.trim();
+                if (raidId.isEmpty() || raidId.length() > 30 || !raidId.matches("[A-Za-z0-9_]+")) {
+                    player.sendMessage(CC.translate("&c✗ ID: 1-30 caracteres, solo letras, números y guiones bajos"));
                     return;
                 }
-                state.tempName = input.trim();
+                if (RaidManager.raidExists(raidId)) {
+                    player.sendMessage(CC.translate("&c✗ Ya existe una raid con ese ID"));
+                    return;
+                }
+                state.tempName = raidId;
                 state.step = 1;
-                player.sendMessage(CC.translate("&a✓ Nombre: &f" + state.tempName));
+                player.sendMessage(CC.translate("&a✓ ID: &f" + state.tempName));
                 player.sendMessage(CC.translate("&7Paso 2/3: Ingresa la &fdescripción"));
                 break;
 
@@ -260,7 +299,11 @@ public class RaidChatInputManager {
                     // Finalizar input ANTES de crear la raid (previene doble procesamiento)
                     if (!finishInput(player)) return;
 
-                    Raid raid = RaidManager.createRaid(state.tempName);
+                    Raid raid = RaidManager.createRaidWithId(state.tempName, null);
+                    if (raid == null) {
+                        player.sendMessage(CC.translate("&c✗ No se pudo crear la raid. El ID ya existe."));
+                        return;
+                    }
                     raid.setDescription(state.tempDescription);
                     raid.setCooldownSeconds(minutes * 60L);
                     RaidManager.updateRaid(raid);
@@ -268,12 +311,13 @@ public class RaidChatInputManager {
                     RaidStorageManager.saveAllRaids();
 
                     player.sendMessage("");
-                    player.sendMessage(CC.translate("&a✓ Raid creada: &f" + state.tempName));
+                    player.sendMessage(CC.translate("&a✓ Raid creada: &f" + raid.getDisplayName()));
                     player.sendMessage(CC.translate("&7ID: &f" + raid.getRaidId()));
+                    player.sendMessage(CC.translate("&7Usa &f/raidadmin setname " + raid.getRaidId() + " <nombre> &7para cambiar el nombre visible"));
                     player.sendMessage("");
 
-                    final String raidId = raid.getRaidId();
-                    openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(raidId).open(player));
+                    final String newRaidId = raid.getRaidId();
+                    openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(newRaidId).open(player));
                 } catch (NumberFormatException e) {
                     player.sendMessage(CC.translate("&c✗ Ingresa un número válido"));
                 }
@@ -282,7 +326,10 @@ public class RaidChatInputManager {
     }
 
     private static void processRename(Player player, String input, RaidInputState state) {
-        if (input.trim().isEmpty() || input.length() > 30) {
+        String trimmed = input.trim();
+        if (trimmed.equals("-") || trimmed.isEmpty()) {
+            trimmed = "";
+        } else if (trimmed.length() > 30) {
             player.sendMessage(CC.translate("&c✗ Nombre: 1-30 caracteres"));
             return;
         }
@@ -296,11 +343,71 @@ public class RaidChatInputManager {
 
         if (!finishInput(player)) return;
 
-        raid.setRaidName(input.trim());
+        raid.setRaidName(trimmed.isEmpty() ? null : trimmed);
         RaidManager.updateRaid(raid);
         RaidStorageManager.saveRaid(raid);
 
-        player.sendMessage(CC.translate("&a✓ Nombre actualizado: &f" + input.trim()));
+        player.sendMessage(CC.translate("&a✓ Nombre visible actualizado: &f" + raid.getDisplayName()));
+        openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(state.raidId).open(player));
+    }
+
+    private static void processChangeRaidId(Player player, String input, RaidInputState state) {
+        String newId = input.trim();
+        if (newId.isEmpty() || newId.length() > 30 || !newId.matches("[A-Za-z0-9_]+")) {
+            player.sendMessage(CC.translate("&c✗ ID: 1-30 caracteres, solo letras, números y guiones bajos"));
+            return;
+        }
+
+        Raid raid = RaidManager.getRaidById(state.raidId);
+        if (raid == null) {
+            player.sendMessage(CC.translate("&c✗ Raid no encontrada"));
+            finishInput(player);
+            return;
+        }
+
+        if (!finishInput(player)) return;
+
+        if (RaidManager.changeRaidId(state.raidId, newId)) {
+            player.sendMessage(CC.translate("&a✓ ID actualizado: &f" + newId));
+            openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(newId).open(player));
+        } else {
+            player.sendMessage(CC.translate("&c✗ No se pudo cambiar el ID. ¿Ya existe?"));
+            openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(state.raidId).open(player));
+        }
+    }
+
+    private static void processSetMenuItem(Player player, String input, RaidInputState state) {
+        String value = input.trim();
+        if (value.isEmpty() || value.length() > 50) {
+            player.sendMessage(CC.translate("&c✗ Valor inválido."));
+            return;
+        }
+
+        Raid raid = RaidManager.getRaidById(state.raidId);
+        if (raid == null) {
+            player.sendMessage(CC.translate("&c✗ Raid no encontrada"));
+            finishInput(player);
+            return;
+        }
+
+        boolean validItemId = RaidConfig.isValidItemId(value);
+        boolean validCustomItem = CustomItemCommand.items.containsKey(value);
+        if (!validItemId && !validCustomItem) {
+            player.sendMessage(CC.translate("&c✗ No es un material, ID de item o custom item válido."));
+            return;
+        }
+
+        if (!finishInput(player)) return;
+
+        // Normalizar materiales de Bukkit a mayúsculas, dejar IDs numéricos/custom tal cual
+        String stored = value;
+        if (Material.getMaterial(value.toUpperCase()) != null) {
+            stored = value.toUpperCase();
+        }
+        raid.setMenuItem(stored);
+        RaidManager.updateRaid(raid);
+        RaidStorageManager.saveAllRaids();
+        player.sendMessage(CC.translate("&a✓ Ícono de &f" + raid.getDisplayName() + " &aactualizado."));
         openMenuDelayed(player, () -> RaidConfigMenu.createRaidConfigMenu(state.raidId).open(player));
     }
 
@@ -436,10 +543,11 @@ public class RaidChatInputManager {
                         return;
                     }
 
+                    // Capturar posición exacta justo antes de registrar
+                    Location loc = player.getLocation().clone();
+
                     // Finalizar input ANTES de guardar
                     if (!finishInput(player)) return;
-
-                    Location loc = state.savedLocation != null ? state.savedLocation : player.getLocation().clone();
                     Wave wave = raid.getWaveByIndex(state.waveIndex);
                     SpawnPoint spawn = new SpawnPoint(loc, state.tempNpcName, state.tempNpcTab, quantity);
                     wave.addSpawnPoint(spawn);

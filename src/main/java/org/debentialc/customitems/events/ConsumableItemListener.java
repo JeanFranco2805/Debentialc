@@ -14,6 +14,7 @@ import org.debentialc.Main;
 import org.debentialc.boosters.core.BoosterParser;
 import org.debentialc.customitems.commands.CustomItemCommand;
 import org.debentialc.customitems.tools.ci.CustomItem;
+import org.debentialc.customitems.tools.nbt.CustomItemTagging;
 import org.debentialc.service.CC;
 import org.debentialc.service.General;
 
@@ -27,6 +28,10 @@ public class ConsumableItemListener implements Listener {
 
     @EventHandler
     public void onItemUse(PlayerInteractEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
         if (event.getAction() != Action.RIGHT_CLICK_AIR &&
                 event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
@@ -57,7 +62,18 @@ public class ConsumableItemListener implements Listener {
 
         event.setCancelled(true);
 
-        if (customItem.getCooldownSeconds() > 0) {
+        if (CustomItemTagging.isExpired(item)) {
+            item.setAmount(0);
+            player.sendMessage(CC.translate("&c✗ Este item ha expirado y ha sido destruido."));
+            return;
+        }
+
+        if (CustomItemTagging.hasOwner(item) && !CustomItemTagging.isOwner(item, player)) {
+            player.sendMessage(CC.translate("&c✗ Este item no te pertenece."));
+            return;
+        }
+
+        if (customItem.getDelaySeconds() > 0) {
             String key = player.getUniqueId() + ":" + customItem.getId();
             long now = System.currentTimeMillis();
             Long expires = cooldowns.get(key);
@@ -66,7 +82,7 @@ public class ConsumableItemListener implements Listener {
                 player.sendMessage(CC.translate("&c✗ Espera &e" + BoosterParser.formatSecondsToTime(remainingSeconds) + " &cpara volver a usar este item."));
                 return;
             }
-            cooldowns.put(key, now + customItem.getCooldownSeconds() * 1000L);
+            cooldowns.put(key, now + customItem.getDelaySeconds() * 1000L);
         }
 
         if (customItem.getCommands() != null && !customItem.getCommands().isEmpty()) {

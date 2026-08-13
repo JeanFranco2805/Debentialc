@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
 import org.bukkit.help.GenericCommandHelpTopic;
 import org.bukkit.help.HelpTopic;
@@ -134,6 +136,45 @@ public class CommandFramework implements CommandExecutor {
         Bukkit.getServer().getHelpMap().addTopic(topic);
     }
 
+    public CommandMap getCommandMap() {
+        return map;
+    }
+
+    public void overrideCommand(String name, String... aliases) {
+        if (map == null || !(map instanceof SimpleCommandMap)) return;
+
+        List<String> labels = new ArrayList<>();
+        labels.add(name);
+        for (String alias : aliases) {
+            labels.add(alias);
+        }
+
+        try {
+            Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
+            knownCommandsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<String, org.bukkit.command.Command> knownCommands = (Map<String, org.bukkit.command.Command>) knownCommandsField.get(map);
+            String pluginPrefix = plugin.getName().toLowerCase();
+
+            for (String label : labels) {
+                String cmdLabel = label.replace(".", ",").split(",")[0].toLowerCase();
+                org.bukkit.command.Command existing = knownCommands.remove(cmdLabel);
+                if (existing != null) {
+                    existing.unregister(map);
+                }
+                knownCommands.remove(pluginPrefix + ":" + cmdLabel);
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        for (String label : labels) {
+            String cmdLabel = label.replace(".", ",").split(",")[0].toLowerCase();
+            org.bukkit.command.Command cmd = new BukkitCommand(cmdLabel, this, plugin);
+            map.register(plugin.getName(), cmd);
+        }
+    }
+
     public void unregisterCommands(Object obj) {
         for (Method m : obj.getClass().getMethods()) {
             if (m.getAnnotation(Command.class) != null) {
@@ -153,10 +194,10 @@ public class CommandFramework implements CommandExecutor {
             org.bukkit.command.Command cmd = new BukkitCommand(cmdLabel, this, plugin);
             map.register(plugin.getName(), cmd);
         }
-        if (!command.description().equalsIgnoreCase("") && cmdLabel == label) {
+        if (!command.description().equalsIgnoreCase("") && cmdLabel.equals(label)) {
             map.getCommand(cmdLabel).setDescription(command.description());
         }
-        if (!command.usage().equalsIgnoreCase("") && cmdLabel == label) {
+        if (!command.usage().equalsIgnoreCase("") && cmdLabel.equals(label)) {
             map.getCommand(cmdLabel).setUsage(command.usage());
         }
     }

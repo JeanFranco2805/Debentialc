@@ -9,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.debentialc.customitems.commands.CustomItemCommand;
+import org.debentialc.raids.managers.RaidCategoryManager;
 import org.debentialc.raids.managers.RaidManager;
 import org.debentialc.raids.managers.RaidStorageManager;
 import org.debentialc.raids.models.Raid;
@@ -65,9 +67,12 @@ public class RaidConfigMenu {
         // INFO DE LA RAID
         ItemStack infoItem = new ItemStack(Material.PAPER);
         ItemMeta infoMeta = infoItem.getItemMeta();
-        infoMeta.setDisplayName(CC.translate("&6&l" + raid.getRaidName()));
+        infoMeta.setDisplayName(CC.translate("&6&l" + raid.getDisplayName()));
         List<String> infoLore = new ArrayList<>();
         infoLore.add(CC.translate("&7ID: &f" + raid.getRaidId()));
+        infoLore.add(CC.translate("&7Nombre visible: &f" + (raid.getRaidName() != null && !raid.getRaidName().isEmpty() ? raid.getRaidName() : "&7(mismo ID)")));
+        infoLore.add(CC.translate("&7Categoría: &f" + RaidCategoryManager.getDisplayName(raid.getCategory())));
+        infoLore.add(CC.translate("&7Ícono: &f" + (raid.getMenuItem() != null && !raid.getMenuItem().isEmpty() ? raid.getMenuItem() : "&7(por defecto)")));
         infoLore.add(CC.translate("&7Descripción: &f" + (raid.getDescription() != null ? raid.getDescription() : "N/A")));
         infoLore.add(CC.translate("&7Oleadas: &f" + raid.getTotalWaves()));
         infoLore.add(CC.translate("&7Jugadores: &f" + raid.getMinPlayers() + "-" + raid.getMaxPlayers()));
@@ -78,20 +83,36 @@ public class RaidConfigMenu {
         infoItem.setItemMeta(infoMeta);
         contents.set(1, 1, ClickableItem.empty(infoItem));
 
-        // RENOMBRAR
+        // NOMBRE VISIBLE
         ItemStack renameButton = new ItemStack(Material.NAME_TAG);
         ItemMeta renameMeta = renameButton.getItemMeta();
-        renameMeta.setDisplayName(CC.translate("&e&lRenombrar"));
+        renameMeta.setDisplayName(CC.translate("&e&lCambiar Nombre Visible"));
         renameMeta.setLore(Arrays.asList(
-                CC.translate("&7Nombre actual:"),
-                CC.translate("&f" + raid.getRaidName()),
+                CC.translate("&7Nombre visible:"),
+                CC.translate("&f" + raid.getDisplayName()),
                 "",
-                CC.translate("&a[CLICK PARA RENOMBRAR]")
+                CC.translate("&a[CLICK PARA EDITAR]")
         ));
         renameButton.setItemMeta(renameMeta);
         contents.set(1, 2, ClickableItem.of(renameButton, e -> {
             player.closeInventory();
             RaidChatInputManager.startRaidRenameInput(player, raidId);
+        }));
+
+        // CAMBIAR ID
+        ItemStack idButton = new ItemStack(Material.PAPER);
+        ItemMeta idMeta = idButton.getItemMeta();
+        idMeta.setDisplayName(CC.translate("&e&lCambiar ID"));
+        idMeta.setLore(Arrays.asList(
+                CC.translate("&7ID actual:"),
+                CC.translate("&f" + raid.getRaidId()),
+                "",
+                CC.translate("&a[CLICK PARA EDITAR]")
+        ));
+        idButton.setItemMeta(idMeta);
+        contents.set(2, 1, ClickableItem.of(idButton, e -> {
+            player.closeInventory();
+            RaidChatInputManager.startRaidIdInput(player, raidId);
         }));
 
         // EDITAR DESCRIPCIÓN
@@ -162,6 +183,40 @@ public class RaidConfigMenu {
             RaidStorageManager.saveRaid(raid);
             player.sendMessage(CC.translate("&a✓ Player spawn: &f" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ()));
             reopenMenu(player, raidId);
+        }));
+
+        // CAMBIAR CATEGORÍA
+        ItemStack categoryButton = new ItemStack(Material.BOOKSHELF);
+        ItemMeta categoryMeta = categoryButton.getItemMeta();
+        categoryMeta.setDisplayName(CC.translate("&e&lCambiar Categoría"));
+        categoryMeta.setLore(Arrays.asList(
+                CC.translate("&7Actual: &f" + RaidCategoryManager.getDisplayName(raid.getCategory())),
+                "",
+                CC.translate("&a[CLICK PARA CAMBIAR]")
+        ));
+        categoryButton.setItemMeta(categoryMeta);
+        contents.set(1, 6, ClickableItem.of(categoryButton, e -> {
+            RaidCategorySelectMenu.open(player, raidId);
+        }));
+
+        // CAMBIAR ÍCONO
+        ItemStack iconButton;
+        if (raid.getMenuItem() != null && !raid.getMenuItem().isEmpty() && CustomItemCommand.items.containsKey(raid.getMenuItem())) {
+            iconButton = CustomItemCommand.buildItemStack(CustomItemCommand.items.get(raid.getMenuItem())).clone();
+        } else {
+            iconButton = new ItemStack(Material.ITEM_FRAME);
+        }
+        ItemMeta iconMeta = iconButton.getItemMeta();
+        iconMeta.setDisplayName(CC.translate("&e&lCambiar Ícono"));
+        iconMeta.setLore(Arrays.asList(
+                CC.translate("&7Actual: &f" + (raid.getMenuItem() != null && !raid.getMenuItem().isEmpty() ? raid.getMenuItem() : "&7(por defecto)")),
+                "",
+                CC.translate("&a[CLICK PARA EDITAR]")
+        ));
+        iconButton.setItemMeta(iconMeta);
+        contents.set(1, 7, ClickableItem.of(iconButton, e -> {
+            player.closeInventory();
+            RaidChatInputManager.startRaidMenuItemInput(player, raidId);
         }));
 
         // COOLDOWN
@@ -264,10 +319,11 @@ public class RaidConfigMenu {
         // ATRÁS
         ItemStack backButton = new ItemStack(Material.ARROW);
         ItemMeta backMeta = backButton.getItemMeta();
-        backMeta.setDisplayName(CC.translate("&b← Atrás"));
+        backMeta.setDisplayName(CC.translate("&b← Volver a la categoría"));
         backButton.setItemMeta(backMeta);
         contents.set(3, 4, ClickableItem.of(backButton, e -> {
-            RaidListMenu.createRaidListMenu(1).open(player);
+            String category = raid.getCategory();
+            RaidAdminCategoryRaidsMenu.open(player, category);
         }));
     }
 }

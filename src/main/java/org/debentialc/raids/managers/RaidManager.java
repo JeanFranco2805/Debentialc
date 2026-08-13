@@ -15,7 +15,7 @@ public class RaidManager {
     private static int raidCounter = 0;
 
     /**
-     * Crea una nueva raid
+     * Crea una nueva raid con ID automático
      */
     public static Raid createRaid(String raidName) {
         String raidId = "raid_" + (++raidCounter);
@@ -24,6 +24,36 @@ public class RaidManager {
 
         System.out.println("[Raids] Nueva raid creada: " + raidId + " - " + raidName);
         return raid;
+    }
+
+    /**
+     * Crea una nueva raid con ID personalizado
+     */
+    public static Raid createRaidWithId(String raidId, String raidName) {
+        if (raidId == null || raidId.isEmpty() || raids.containsKey(raidId)) {
+            return null;
+        }
+        Raid raid = new Raid(raidId, raidName);
+        raids.put(raidId, raid);
+        System.out.println("[Raids] Nueva raid creada: " + raidId);
+        return raid;
+    }
+
+    /**
+     * Cambia el ID de una raid existente
+     */
+    public static boolean changeRaidId(String oldId, String newId) {
+        if (oldId == null || newId == null || oldId.equalsIgnoreCase(newId)) return false;
+        if (!raids.containsKey(oldId)) return false;
+        if (raids.containsKey(newId)) return false;
+
+        Raid raid = raids.remove(oldId);
+        raid.setRaidId(newId);
+        raids.put(newId, raid);
+        RaidStorageManager.deleteRaidFiles(oldId);
+        RaidStorageManager.saveAllRaids();
+        System.out.println("[Raids] ID cambiado: " + oldId + " -> " + newId);
+        return true;
     }
 
     /**
@@ -78,6 +108,8 @@ public class RaidManager {
      */
     public static boolean deleteRaid(String raidId) {
         if (raids.remove(raidId) != null) {
+            RaidStorageManager.deleteRaidFiles(raidId);
+            RaidStorageManager.saveAllRaids();
             System.out.println("[Raids] Raid eliminada: " + raidId);
             return true;
         }
@@ -141,7 +173,7 @@ public class RaidManager {
         StringBuilder sb = new StringBuilder();
         sb.append("§6=== Información de Raid ===\n");
         sb.append("§eID: §f").append(raid.getRaidId()).append("\n");
-        sb.append("§eNombre: §f").append(raid.getRaidName()).append("\n");
+        sb.append("§eNombre: §f").append(raid.getDisplayName()).append("\n");
         sb.append("§eDescripción: §f").append(raid.getDescription()).append("\n");
         sb.append("§eOleadas: §f").append(raid.getTotalWaves()).append("\n");
         sb.append("§eJugadores: §f").append(raid.getMinPlayers()).append("-").append(raid.getMaxPlayers()).append("\n");
@@ -172,7 +204,7 @@ public class RaidManager {
 
             sb.append(String.format("§e[%d] §f%s §7(%s) §7- Oleadas: §f%d §7- Configurada: %s\n",
                     i + 1,
-                    raid.getRaidName(),
+                    raid.getDisplayName(),
                     raid.getRaidId(),
                     raid.getTotalWaves(),
                     configured
@@ -203,6 +235,27 @@ public class RaidManager {
         raids.clear();
         raidCounter = 0;
         System.out.println("[Raids] Todas las raids han sido limpiadas");
+    }
+
+    /**
+     * Recalcula el contador de raids para evitar IDs duplicados tras reinicio.
+     * Debe llamarse después de cargar las raids desde disco.
+     */
+    public static void recalculateRaidCounter() {
+        int max = 0;
+        for (String id : raids.keySet()) {
+            if (id.startsWith("raid_")) {
+                try {
+                    int num = Integer.parseInt(id.substring(5));
+                    if (num > max) {
+                        max = num;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        raidCounter = max;
+        System.out.println("[Raids] Contador de raids recalculado: " + raidCounter);
     }
 
     /**

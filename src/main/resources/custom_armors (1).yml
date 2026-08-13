@@ -1,0 +1,1172 @@
+armors:
+  GOHANB_CHESTPLATE:
+    id: GOHANB_CHESTPLATE
+    material: 5432
+    displayName: §7[§5§lGOHAN BEAST§7] §6§lKIT §f- §aPechera
+    isArmor: true
+    bonusStat:
+      str: 1.45
+    operations:
+      str: '*'
+    effects: {}
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Despertada por una furia incontrolable,
+    - §8esta armadura encarna el poder latente
+    - §8que trasciende los límites mortales.
+    - §8Su energía vibra con instinto y pureza.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+45%'
+    - '§b✦ §bDEX: §b+38%'
+    - '§6✪ §6CON: §6+40%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Despertar Bestial.'
+    - §7Regenerarás §b3% §7de §bKI §7y §b3% §7de §6estamina §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  GOHANB_LEGGINGS:
+    id: GOHANB_LEGGINGS
+    material: 5433
+    displayName: §7[§5§lGOHAN BEAST§7] §6§lKIT §f- §aPantalones
+    isArmor: true
+    bonusStat:
+      dex: 1.38
+    operations:
+      dex: '*'
+    effects:
+      KIREGEN: 0.03
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Despertada por una furia incontrolable,
+    - §8esta armadura encarna el poder latente
+    - §8que trasciende los límites mortales.
+    - §8Su energía vibra con instinto y pureza.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+45%'
+    - '§b✦ §bDEX: §b+38%'
+    - '§6✪ §6CON: §6+40%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Despertar Bestial.'
+    - §7Regenerarás §b3% §7de §bKI §7y §b3% §7de §6estamina §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  GOHANB_BOOTS:
+    id: GOHANB_BOOTS
+    material: 6052
+    displayName: §7[§5§lGOHAN BEAST§7] §6§lKIT §f- §aBotas
+    isArmor: true
+    bonusStat:
+      con: 1.4
+    operations:
+      con: '*'
+    effects:
+      STAMINAREGEN: 0.03
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Despertada por una furia incontrolable,
+    - §8esta armadura encarna el poder latente
+    - §8que trasciende los límites mortales.
+    - §8Su energía vibra con instinto y pureza.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+45%'
+    - '§b✦ §bDEX: §b+38%'
+    - '§6✪ §6CON: §6+40%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Despertar Bestial.'
+    - §7Regenerarás §b3% §7de §bKI §7y §b3% §7de §6estamina §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  GOGETA_CHESTPLATE:
+    id: GOGETA_CHESTPLATE
+    material: 4564
+    displayName: §7[§6§lGOGETA§7] §6§lKIT §f- §aChaleco
+    isArmor: true
+    bonusStat:
+      str: 1.6
+    operations:
+      str: '*'
+    effects:
+      HEALTHREGEN: 0.04
+      STAMINAREGEN: 0.3
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Resultado de una sincronización perfecta,
+    - §8esta vestimenta simboliza la unión de dos
+    - §8guerreros que combinan fuerza y técnica
+    - §8en una sola entidad imparable.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+60%'
+    - '§b✦ §bDEX: §b+60%'
+    - '§6✪ §6CON: §6+60%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Sincronización Metamoru.'
+    - §7Regenerarás §b2% §7de §bKI §7, §b4% §7de §6estamina §7y §b4% §7de §2vida §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  GOGETA_LEGGINGS:
+    id: GOGETA_LEGGINGS
+    material: 4565
+    displayName: §7[§6§lGOGETA§7] §6§lKIT §f- §aPantalones
+    isArmor: true
+    bonusStat:
+      dex: 1.6
+    operations:
+      dex: '*'
+    effects:
+      KIREGEN: 0.02
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Resultado de una sincronización perfecta,
+    - §8esta vestimenta simboliza la unión de dos
+    - §8guerreros que combinan fuerza y técnica
+    - §8en una sola entidad imparable.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+60%'
+    - '§b✾ §bDEX: §b+60%'
+    - '§6❁ §6CON: §6+60%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Sincronización Metamoru.'
+    - §7Regenerarás §b2% §7de §bKI §7, §b4% §7de §6estamina §7y §b4% §7de §2vida §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  GOGETA_BOOTS:
+    id: GOGETA_BOOTS
+    material: 4566
+    displayName: §7[§6§lGOGETA§7] §6§lKIT §f- §aBotas
+    isArmor: true
+    bonusStat:
+      con: 1.6
+    operations:
+      con: '*'
+    effects:
+      STAMINAREGEN: 0.04
+    maxDurability: 40000
+    unbreakable: false
+    lore:
+    - §8Resultado de una sincronización perfecta,
+    - §8esta vestimenta simboliza la unión de dos
+    - §8guerreros que combinan fuerza y técnica
+    - §8en una sola entidad imparable.
+    - ''
+    - §2Al portar esta pieza, se te otorgarán las siguientes
+    - '§2estadísticas:'
+    - ''
+    - '§9✦ §9STR: §9+60%'
+    - '§b✾ §bDEX: §b+60%'
+    - '§6❁ §6CON: §6+60%'
+    - ''
+    - §6➤ §d§lBono de KIT COMPLETO
+    - '§7Pasivo: Sincronización Metamoru.'
+    - §7Regenerarás §b2% §7de §bKI §7, §b4% §7de §6estamina §7y §b4% §7de §2vida §7cada segundo al portar el §b§nkit completo
+    - ''
+    - §6§l★ ITEM LEGENDARIO
+  trunks_chestplate:
+    id: trunks_chestplate
+    material: 5507
+    isArmor: true
+    maxDurability: 20000
+    unbreakable: false
+    lore:
+    - '§8Proveniente de un guerrero Saiyan del futuro. '
+    - '§8Se teoriza que pertenece a una dimensión alterna, '
+    - §8donde es la última esperanza de la humanidad.
+    - ' '
+    - '§2Al portar esta pieza, se te ortogarán las siguientes bonificaciones:'
+    - ' '
+    - '§c✦ STR: +10%'
+    - '§b✾ DEX: +10%'
+    - ' '
+    - '§6➬ §d§lBono de KIT Completo:'
+    - ' '
+    - '§7Pasiva: §6Orgullo del último Saiyan.'
+    - ' '
+    - §7Regerenarás el §b4% §7de tu §bKI §7cada 2 segundos.
+    displayName: §7(§3§lTRUNKS§7) §6§LKIT §7- §aChaleco
+    effects:
+      KIREGEN: 0.04
+    bonusStat:
+      str: 1.1
+      dex: 1.1
+    operations:
+      str: '*'
+      dex: '*'
+  trunks_boots:
+    id: trunks_boots
+    material: 5555
+    isArmor: true
+    maxDurability: 20000
+    unbreakable: false
+    lore:
+    - '§8Proveniente de un guerrero Saiyan del futuro. '
+    - '§8Se teoriza que pertenece a una dimensión alterna, '
+    - §8donde es la última esperanza de la humanidad.
+    - ' '
+    - '§2Al portar esta pieza, se te ortogarán las siguientes bonificaciones:'
+    - ' '
+    - '§c✦ STR: +10%'
+    - '§b✾ DEX: +10%'
+    - ' '
+    - '§6➬ §d§lBono de KIT Completo:'
+    - ' '
+    - '§7Pasiva: §6Orgullo del último Saiyan.'
+    - ' '
+    - §7Regerenarás el §b4% §7de tu §bKI §7cada 2 segundos.
+    displayName: §7(§3§lTRUNKS§7) §6§LKIT §7- §aBotas
+    bonusStat:
+      str: 1.1
+      dex: 1.1
+    operations:
+      str: '*'
+      dex: '*'
+    effects:
+      KIREGEN: 0.04
+  trunks_leggings:
+    id: trunks_leggings
+    material: 5508
+    isArmor: true
+    maxDurability: 20000
+    unbreakable: false
+    lore:
+    - '§8Proveniente de un guerrero Saiyan del futuro. '
+    - '§8Se teoriza que pertenece a una dimensión alterna, '
+    - §8donde es la última esperanza de la humanidad.
+    - ' '
+    - '§2Al portar esta pieza, se te ortogarán las siguientes bonificaciones:'
+    - ' '
+    - '§c✦ STR: +10%'
+    - '§b✾ DEX: +10%'
+    - ' '
+    - '§6➬ §d§lBono de KIT Completo:'
+    - ' '
+    - '§7Pasiva: §6Orgullo del último Saiyan.'
+    - ' '
+    - §7Regerenarás el §b4% §7de tu §bKI §7cada 2 segundos.
+    displayName: §7(§3§LTRUNKS§7) §6§lKIT §7- §aPantalones
+    effects:
+      KIREGEN: 0.04
+    bonusStat:
+      str: 1.1
+      dex: 1.1
+    operations:
+      str: '*'
+      dex: '*'
+  vegito_chestplate:
+    id: vegito_chestplate
+    material: 6028
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore: []
+    displayName: §7(§1§lVEGETTO§7) §6§lKIT §7- §aPechera
+  vegito_leggings:
+    id: vegito_leggings
+    material: 5740
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore: []
+    displayName: §7(§1§lVEGETTO§7) §6§lKIT §7- §aPantalones
+  vegito_boots:
+    id: vegito_boots
+    material: 5741
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore: []
+    displayName: §7(§1§lVEGETTO§7) §6§lKIT §7- §aBotas
+  kit_inicio_pechera:
+    id: kit_inicio_pechera
+    material: 5643
+    isArmor: true
+    maxDurability: -1
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - §7Un conjunto básico entregado a
+    - §7los nuevos guerreros al iniciar
+    - §7su camino en este mundo.
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero Inicial'
+    - §e§lEquipo Inicial
+    - §7Diseñado para sobrevivir a los
+    - §7primeros desafíos.
+    - ''
+    - '§9✦ STR: §9+20'
+    - '§5❃ WIL: §5+20'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6✦ §e§lPechera del Guerrero Novato §6✦
+    bonusStat:
+      str: 20.0
+      will: 20.0
+    operations:
+      str: +
+      will: +
+  kit_inicio_pantalones:
+    id: kit_inicio_pantalones
+    material: 6014
+    isArmor: true
+    maxDurability: -1
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - §7Parte de un conjunto básico
+    - §7utilizado por nuevos guerreros
+    - §7en sus primeras batallas.
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero Inicial'
+    - §e§lEquipo Inicial
+    - §7Ofrece movilidad y resistencia
+    - §7para combates iniciales.
+    - ''
+    - '§6❁ CON: §6+15'
+    - '§b✾ DEX: §b+15'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6✦ §e§lPantalones del Guerrero Novato §6✦
+    bonusStat:
+      con: 15.0
+      dex: 15.0
+    operations:
+      con: +
+      dex: +
+  kit_inicio_botas:
+    id: kit_inicio_botas
+    material: 5338
+    isArmor: true
+    maxDurability: -1
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - §7Calzado básico diseñado para
+    - §7los primeros pasos de un
+    - §7guerrero en entrenamiento.
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero Inicial'
+    - §e§lEquipo Inicial
+    - §7Aumenta la estabilidad y el
+    - §7control durante el combate.
+    - ''
+    - '§3✾ MND: §3+10'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6✦ §e§lBotas del Guerrero Novato §6✦
+    bonusStat:
+      mnd: 10.0
+    operations:
+      mnd: +
+  set_aprendiz_chestplate_lvl250:
+    id: set_aprendiz_chestplate_lvl250
+    material: 5168
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7El primer equipo otorgado a los
+    - §7guerreros que han demostrado
+    - §7su potencial en el combate.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Aprendiz'
+    - §e§lEquipo Nivel 250
+    - §7Diseñado para fortalecer las
+    - §7habilidades de sus portadores.
+    - ''
+    - '§9✦ STR: §9+25'
+    - '§b✾ DEX: §b+20'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[APRENDIZ] §e§lKIT - §a§lPechera
+    bonusStat:
+      str: 25.0
+      dex: 20.0
+    operations:
+      str: +
+      dex: +
+  set_aprendiz_leggings_lvl250:
+    id: set_aprendiz_leggings_lvl250
+    material: 5216
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Parte del equipo utilizado por
+    - §7guerreros que comienzan a dar
+    - §7sus primeros pasos hacia la élite.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Aprendiz'
+    - §e§lEquipo Nivel 250
+    - §7Brinda estabilidad y resistencia
+    - §7durante el entrenamiento.
+    - ''
+    - '§6✦ CON: §6+20'
+    - '§5❃ WIL: §5+15'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[APRENDIZ] §e§lKIT - §a§lPantalones
+    bonusStat:
+      con: 20.0
+      will: 15.0
+    operations:
+      con: +
+      will: +
+  set_aprendiz_boots_lvl250:
+    id: set_aprendiz_boots_lvl250
+    material: 5170
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: true
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Botas creadas para acompañar a
+    - §7los aprendices durante sus
+    - §7primeros entrenamientos.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Aprendiz'
+    - §e§lEquipo Nivel 250
+    - §7Aumentan la agilidad y mejoran
+    - §7la concentración en combate.
+    - ''
+    - '§b✦ DEX: §b+15'
+    - '§d❃ MND: §d+10'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[APRENDIZ] §e§lKIT - §a§lBotas
+    bonusStat:
+      str: 0.0
+      dex: 15.0
+      mnd: 10.0
+    operations:
+      str: +
+      dex: +
+      mnd: +
+  set_guerrero_chestplate_lvl500:
+    id: set_guerrero_chestplate_lvl500
+    material: 5165
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Una armadura otorgada a quienes
+    - §7han superado el entrenamiento
+    - §7básico y dominan el combate.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero'
+    - §e§lEquipo Nivel 500
+    - §7Forjada para aumentar el poder
+    - §7y la disciplina en batalla.
+    - ''
+    - '§9✦ STR: §9+40'
+    - '§b✿ DEX: §b+35'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[GUERRERO] §e§lKIT - §a§lPechera
+    bonusStat:
+      str: 40.0
+      dex: 35.0
+    operations:
+      str: +
+      dex: +
+  set_guerrero_leggings_lvl500:
+    id: set_guerrero_leggings_lvl500
+    material: 5166
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Parte del equipo utilizado por
+    - §7guerreros preparados para afrontar
+    - §7desafíos de mayor dificultad.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero'
+    - §e§lEquipo Nivel 500
+    - §7Brinda resistencia y estabilidad
+    - §7durante cualquier enfrentamiento.
+    - ''
+    - '§6✦ CON: §6+35'
+    - '§5✿ WIL: §5+30'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[GUERRERO] §e§lKIT - §a§lPantalones
+    bonusStat:
+      con: 35.0
+      will: 30.0
+    operations:
+      con: +
+      will: +
+  set_guerrero_boots_lvl500:
+    id: set_guerrero_boots_lvl500
+    material: 6060
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Botas diseñadas para mejorar la
+    - §7movilidad y mantener el ritmo
+    - §7en combates prolongados.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Guerrero'
+    - §e§lEquipo Nivel 500
+    - §7Favorecen la agilidad y la
+    - §7concentración del portador.
+    - ''
+    - '§b✦ DEX: §b+25'
+    - '§d✿ MND: §d+20'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §6§l[GUERRERO] §e§lKIT - §a§lBotas
+    bonusStat:
+      dex: 25.0
+      mnd: 20.0
+    operations:
+      dex: +
+      mnd: +
+  set_combatiente_chestplate_lvl750:
+    id: set_combatiente_chestplate_lvl750
+    material: 5153
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Creada para luchadores que han
+    - §7demostrado su valor en batalla
+    - §7y continúan perfeccionando su poder.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Combatiente'
+    - §e§lEquipo Nivel 750
+    - §7Fortalece el cuerpo y mejora
+    - §7el rendimiento en combate.
+    - ''
+    - '§9✦ STR: §9+60'
+    - '§b✦ DEX: §b+50'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §9§l[COMBATIENTE] §b§lKIT - §3§lPechera
+    bonusStat:
+      str: 60.0
+      dex: 50.0
+    operations:
+      str: +
+      dex: +
+  set_combatiente_leggings_lvl750:
+    id: set_combatiente_leggings_lvl750
+    material: 6018
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Una pieza resistente utilizada
+    - §7por combatientes preparados para
+    - §7afrontar enemigos más peligrosos.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Combatiente'
+    - §e§lEquipo Nivel 750
+    - §7Proporciona resistencia y una
+    - §7mayor estabilidad en batalla.
+    - ''
+    - '§6✦ CON: §6+50'
+    - '§5✿ WIL: §5+40'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §9§l[COMBATIENTE] §b§lKIT - §3§lPantalones
+    bonusStat:
+      con: 50.0
+      will: 40.0
+    operations:
+      con: +
+      will: +
+  set_combatiente_boots_lvl750:
+    id: set_combatiente_boots_lvl750
+    material: 5172
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Botas fabricadas para quienes
+    - §7buscan superar sus límites en
+    - §7cada nuevo enfrentamiento.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Combatiente'
+    - §e§lEquipo Nivel 750
+    - §7Mejoran la movilidad y ayudan
+    - §7a mantener el enfoque.
+    - ''
+    - '§b✦ DEX: §b+35'
+    - '§d✿ MND: §d+30'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §9§l[COMBATIENTE] §b§lKIT - §3§lBotas
+    bonusStat:
+      dex: 35.0
+      mnd: 30.0
+    operations:
+      dex: +
+      mnd: +
+  set_veterano_chestplate_lvl1000:
+    id: set_veterano_chestplate_lvl1000
+    material: 5274
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Portada por guerreros con gran
+    - §7experiencia, capaces de enfrentar
+    - §7cualquier desafío sin retroceder.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Veterano'
+    - §e§lEquipo Nivel 1000
+    - §7Su resistencia y poder reflejan
+    - §7los años de entrenamiento.
+    - ''
+    - '§9✦ STR: §9+80'
+    - '§b❃ DEX: §b+65'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §4§l[VETERANO] §c§lKIT - §6§lPechera
+    bonusStat:
+      str: 80.0
+      dex: 65.0
+    operations:
+      str: +
+      dex: +
+  set_veterano_leggings_lvl1000:
+    id: set_veterano_leggings_lvl1000
+    material: 5241
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Una pieza creada para soportar
+    - §7largas batallas y mantener la
+    - §7fortaleza en todo momento.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Veterano'
+    - §e§lEquipo Nivel 1000
+    - §7Otorgan una defensa sólida y
+    - §7una voluntad inquebrantable.
+    - ''
+    - '§6✦ CON: §6+65'
+    - '§5❃ WIL: §5+50'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §4§l[VETERANO] §c§lKIT - §6§lPantalones
+    bonusStat:
+      con: 65.0
+      will: 50.0
+    operations:
+      con: +
+      will: +
+  set_veterano_boots_lvl1000:
+    id: set_veterano_boots_lvl1000
+    material: 5183
+    isArmor: true
+    maxDurability: 10000
+    unbreakable: false
+    lore:
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - §7Botas fabricadas para luchadores
+    - §7experimentados que buscan mantener
+    - §7el control en cualquier combate.
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - ''
+    - '§6§lSet: Veterano'
+    - §e§lEquipo Nivel 1000
+    - §7Favorecen la movilidad y mejoran
+    - §7la concentración del portador.
+    - ''
+    - '§b✦ DEX: §b+45'
+    - '§d❃ MND: §d+40'
+    - ''
+    - §7§m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    displayName: §4§l[VETERANO] §c§lKIT - §6§lBotas
+    bonusStat:
+      dex: 45.0
+      mnd: 40.0
+    operations:
+      dex: +
+      mnd: +
+  set_roshi_chestplate:
+    id: set_roshi_chestplate
+    material: 5276
+    isArmor: true
+    maxDurability: 8000
+    unbreakable: true
+    lore:
+    - '&7El uniforme de los discípulos de la'
+    - '&7legendaria Escuela Tortuga.'
+    - ''
+    - '&fVestir este gi representa disciplina,'
+    - '&fperseverancia y el legado transmitido'
+    - '&fpor el Maestro Roshi.'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&c+400 STR'
+    - '&a+1000 CON'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&6&l✪ Reliquia de la Escuela Tortuga'
+    displayName: '&6&l✦ Gi de la Escuela Tortuga ✦'
+    bonusStat:
+      str: 400.0
+      con: 1000.0
+    operations:
+      str: +
+      con: +
+  set_roshi_leggings:
+    id: set_roshi_leggings
+    material: 5277
+    isArmor: true
+    maxDurability: 8000
+    unbreakable: true
+    lore:
+    - '&7Pantalones utilizados durante el'
+    - '&7entrenamiento más exigente.'
+    - ''
+    - '&fDiseñados para soportar combates'
+    - '&fy sesiones de entrenamiento sin'
+    - '&fperder movilidad.'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&a+600 CON'
+    - '&b+600 DEX'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&6&l✪ Reliquia de la Escuela Tortuga'
+    displayName: '&6&l✦ Gi Inferior de la Escuela Tortuga ✦'
+    bonusStat:
+      con: 600.0
+      dex: 600.0
+    operations:
+      con: +
+      dex: +
+  set_roshi_boots:
+    id: set_roshi_boots
+    material: 5278
+    isArmor: true
+    maxDurability: 8000
+    unbreakable: true
+    lore:
+    - '&7El calzado tradicional de los'
+    - '&7discípulos del Maestro Roshi.'
+    - ''
+    - '&fLigeras y resistentes, permiten'
+    - '&fdesplazarse con rapidez incluso'
+    - '&fdurante los entrenamientos más duros.'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&9+400 WIL'
+    - '&b+1000 DEX'
+    - ''
+    - '&8════════════════════'
+    - ''
+    - '&6&l✪ Reliquia de la Escuela Tortuga'
+    displayName: '&6&l✦ Sandalias de la Escuela Tortuga ✦'
+    bonusStat:
+      will: 400.0
+      dex: 1000.0
+    operations:
+      will: +
+      dex: +
+  scouter:
+    id: scouter
+    material: 4764
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore: []
+    bonusStat:
+      str: 2.5
+    operations:
+      str: '*'
+    effects:
+      KIREGEN: 0.1
+  armaduravip:
+    id: armaduravip
+    material: 4653
+    displayName: '&4Pechera Xeno'
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cUna armadura utilizada por el protector'
+    - '&cde las líneas temporales. Cada batalla'
+    - '&cha fortalecido su resistencia y voluntad.'
+    - ''
+    - '&4Al portar esta pieza, se te otorgarán las siguientes'
+    - '&4estadísticas:'
+    - ''
+    - '&a✦ STR: +10%'
+    - '&b❁ CON: +10%'
+    - ''
+    - '&4&l➤ Armadura Xeno'
+    bonusStat:
+      str: 1.1
+      con: 1.1
+    operations:
+      str: '*'
+      con: '*'
+  armaduravip1:
+    id: armaduravip1
+    material: 4654
+    displayName: '&4Pantalon Xeno'
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cForjados para resistir incontables viajes'
+    - '&ca través del tiempo, conservan la energía'
+    - '&cde un guerrero que jamás se rinde.'
+    - ''
+    - '&4Al portar esta pieza, se te otorgarán las siguientes'
+    - '&4estadísticas:'
+    - ''
+    - '&3✿ WIL: +10%'
+    - '&a❃ DEX: 10%'
+    - ''
+    - '&4➤ Armadura Xeno'
+    bonusStat:
+      will: 1.1
+      dex: 1.1
+    operations:
+      will: '*'
+      dex: '*'
+  armaduravip2:
+    id: armaduravip2
+    material: 4655
+    displayName: '&4Botas Xeno'
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cCada paso dado con estas botas ha'
+    - '&ccambiado el destino de incontables'
+    - '&cuniversos y líneas temporales.'
+    - ''
+    - '&4Al portar esta pieza, se te otorgarán las siguientes'
+    - '&4estadísticas:'
+    - ''
+    - '&2✾ SPI: +10%'
+    - ''
+    - '&4➤ Armadura Xeno'
+  armaduravip+:
+    id: armaduravip+
+    material: 5983
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cUna armadura portada por el legendario'
+    - '&chéroe de Konats. Contiene la resolución'
+    - '&cy el valor para sellar cualquier mal.'
+    - ''
+    - '&6Al portar esta pieza, se te otorgarán las siguientes'
+    - '&6estadísticas:'
+    - ''
+    - '&a❃ STR: +20%'
+    - '&b❁ CON: +20%'
+    - ''
+    - '&6➤ Armadura de Tapion'
+    displayName: '&6Pechera de Tapion'
+    bonusStat:
+      str: 1.2
+      con: 1.2
+    operations:
+      str: '*'
+      con: '*'
+    ownerOnly: true
+  armaduravip+1:
+    id: armaduravip+1
+    material: 6001
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cForjado para resistir feroces batallas,'
+    - '&cconserva la energía de un guerrero que'
+    - '&cjamás se rindió ante la oscuridad.'
+    - ''
+    - '&6Al portar esta pieza, se te otorgarán las siguientes'
+    - '&6estadísticas:'
+    - ''
+    - '&b✿ WIL: +20%'
+    - '&a❇ DEX: +20%'
+    - ''
+    - '&6Regenera &a2% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'
+    - '&6➤ Armadura de Tapion'
+    displayName: '&6Pantalon de Tapion'
+    bonusStat:
+      will: 1.2
+      dex: 1.2
+    operations:
+      will: '*'
+      dex: '*'
+    ownerOnly: true
+  armaduravip+2:
+    id: armaduravip+2
+    material: 5344
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cCada paso dado con estas botas ha'
+    - '&crecorrido las ruinas de Konats para'
+    - '&cproteger el destino del universo.'
+    - ''
+    - '&6Al portar esta pieza, se te otorgarán las siguientes'
+    - '&6estadísticas:'
+    - ''
+    - '&a❁ SPI: +10%'
+    - ''
+    - '&6Regenera &a2% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'
+    - '&6➤ Armadura de Tapion'
+    displayName: '&6Botas de Tapion'
+    ownerOnly: true
+  armaduravip+3:
+    id: armaduravip+3
+    material: 5342
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cCinta sagrada portada por el héroe de'
+    - '&cKonats. Canaliza el flujo espiritual para'
+    - '&cacelerar la recuperación de tu energía.'
+    - ''
+    - '&6Regenera &a2% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'    
+    - '&6➤ Armadura de Tapion'
+    displayName: '&6Banda de Tapion'
+    effects:
+      KIREGEN: 0.1
+  armaduramvip:
+    id: armaduramvip
+    material: 6035
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cArmadura alterada en la grieta temporal.'
+    - '&cAcumula la furia de un guerrero que'
+    - '&cdesafió al destino y a los mismos Dioses.'
+    - ''
+    - '&7Al portar esta pieza, se te otorgarán las siguientes'
+    - '&7estadísticas:'
+    - ''
+    - '&a✿ STR: +30%'
+    - '&b❁ CON: +30%'
+    - ''
+    - '&6Regenera &a7% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'
+    - '&7➤ Armadura de Bardock Xeno'
+    displayName: '&7Pechera de Bardock'
+    bonusStat:
+      str: 1.3
+      con: 1.3
+    operations:
+      str: '*'
+      con: '*'
+  armaduramvip1:
+    id: armaduramvip1
+    material: 5573
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cForjado para resistir batallas entre'
+    - '&cdiferentes eras, conservando la marca'
+    - '&cde la rebelión contra el tiempo.'
+    - ''
+    - '&7Al portar esta pieza, se te otorgarán las siguientes'
+    - '&7estadísticas:'
+    - ''
+    - '&b✿ WIL: +30%'
+    - '&a❇ DEX: +30%'
+    - ''
+    - '&6Regenera &a5% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'    
+    - '&7➤ Armadura de Bardock Xeno'
+    displayName: '&7Pantalon de Bardock'
+    bonusStat:
+      will: 1.3
+      dex: 1.3
+    operations:
+      will: '*'
+      dex: '*'
+  armaduramvip2:
+    id: armaduramvip2
+    material: 5574
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cCada paso dado con estas botas ha'
+    - '&ccruzado dimensiones y líneas temporales'
+    - '&cpara alterar el curso de la historia.'
+    - ''
+    - '&7Al portar esta pieza, se te otorgarán las siguientes'
+    - '&7estadísticas:'
+    - ''
+    - '&a✿ SPI: +30%'
+    - ''
+    - '&6Regenera &a5% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'    
+    - '&7➤ Armadura de Bardock Xeno'
+    displayName: '&7Botas de Bardock'
+  armaduramvip3:
+    id: armaduramvip3
+    material: 5661
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cArtefacto de los Time Breakers utilizado'
+    - '&cpara suprimir la voluntad y desatar'
+    - '&cel Ki oscuro del Saiyajin enmascarado.'
+    - ''
+    - '&6Regenera &a5% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'    
+    - '&7➤ Armadura de Bardock Xeno'
+    displayName: '&7Mascara de Bardock'
+  armaduramvip+1:
+    id: armaduramvip+1
+    material: 5681
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cArmadura divina forjada en el núcleo del tiempo.'
+    - '&cCanaliza la energía eterna que regula el'
+    - '&cpasado, presente y futuro de la creación.'
+    - ''
+    - '&eAl portar esta pieza, se te otorgarán las siguientes'
+    - '&eestadísticas:'
+    - ''
+    - '&a✿ STR: +40%'
+    - '&b✾ CON: +40%'
+    - ''
+    - '&6Regenera &a7% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'    
+    - '&e➤ Armadura del Dios del Tiempo'
+    displayName: '&ePechera del Dios del Tiempo'
+    bonusStat:
+      str: 1.4
+      con: 1.4
+    operations:
+      str: '*'
+      con: '*'
+  armaduramvip+2:
+    id: armaduramvip+2
+    material: 5682
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore:
+    - '&cTejido con las hebras de la realidad temporal.'
+    - '&cPermite distorsionar el espacio para moverse'
+    - '&cmás allá de los límites mortales.'
+    - ''
+    - '&eAl portar esta pieza, se te otorgarán las siguientes'
+    - '&eestadísticas:'
+    - ''
+    - '&b✿ WIL: +40%'
+    - '&a❇ DEX: +40%'
+    - ''
+    - '&6Regenera &a7% &6de &cVida&6, &bKi &6y &eStamina&6cada segundo.'        
+    - '&e➤ Armadura del Dios del Tiempo'
+    displayName: '&ePantalón del Dios del Tiempo'
+    bonusStat:
+      will: 1.4
+      dex: 1.4
+    operations:
+      will: '*'
+      dex: '*'
+  armaduramvip+3:
+    id: armaduramvip+3
+    material: 5686
+    isArmor: true
+    maxDurability: -1
+    unbreakable: false
+    lore: 
+    - '&cCada paso dado con estas botas desafía'
+    - '&clas barreras del tiempo y el espacio,'
+    - '&cpermitiendo recorrer cualquier destino.'
+    - ''
+    - '&eAl portar esta pieza, se te otorgarán las siguientes'
+    - '&eestadísticas:'
+    - ''
+    - '&b✿ SPI: +40%'
+    - ''
+    - '&6Regenera &a7% &6de &cVida&6, &bKI &6y &eStamina &6cada segundo.'
+    - '&6➤ Armadura del Dios del Tiempo'
+    displayName: '&eBotas del Dios del Tiempo'

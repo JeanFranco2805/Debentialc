@@ -35,7 +35,7 @@ public class RaidWavesMenu {
                         // TÍTULO
                         ItemStack titleItem = new ItemStack(Material.BLAZE_POWDER);
                         ItemMeta titleMeta = titleItem.getItemMeta();
-                        titleMeta.setDisplayName(CC.translate("&6&lOleadas - " + raid.getRaidName()));
+                        titleMeta.setDisplayName(CC.translate("&6&lOleadas - " + raid.getDisplayName()));
                         titleMeta.setLore(Arrays.asList(
                                 CC.translate("&7Total: &f" + raid.getTotalWaves() + " oleadas")
                         ));

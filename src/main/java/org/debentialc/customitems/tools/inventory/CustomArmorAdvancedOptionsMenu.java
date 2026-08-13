@@ -11,6 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.customitems.commands.RegisterItem;
 import org.debentialc.customitems.tools.ci.CustomArmor;
 import org.debentialc.service.CC;
+import org.debentialc.boosters.core.BoosterParser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,51 +45,48 @@ public class CustomArmorAdvancedOptionsMenu {
                         titleItem.setItemMeta(titleMeta);
                         contents.set(0, 4, ClickableItem.empty(titleItem));
 
-                        // REBIRTH
-                        ItemStack rebirthButton = new ItemStack(Material.ENDER_PEARL);
-                        ItemMeta rebirthMeta = rebirthButton.getItemMeta();
-                        rebirthMeta.setDisplayName(CC.translate("&5&lRebirth Requerido"));
-                        List<String> rebirthLore = new ArrayList<>();
-                        rebirthLore.add(CC.translate("&7Restringe el uso/equipado de la armadura"));
-                        rebirthLore.add(CC.translate("&7según el progreso de rebirth."));
-                        rebirthLore.add("");
-                        if (armor.getRequiredRebirthBlock() != null && !armor.getRequiredRebirthBlock().isEmpty() && armor.getRequiredRebirthLevel() > 0) {
-                            rebirthLore.add(CC.translate("&7Bloque: &f" + armor.getRequiredRebirthBlock()));
-                            rebirthLore.add(CC.translate("&7Nivel local: &f" + armor.getRequiredRebirthLevel()));
-                        } else {
-                            rebirthLore.add(CC.translate("&cSin requisito de rebirth"));
-                        }
-                        rebirthLore.add("");
-                        rebirthLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
-                        rebirthLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
-                        rebirthMeta.setLore(rebirthLore);
-                        rebirthButton.setItemMeta(rebirthMeta);
-                        contents.set(2, 2, ClickableItem.of(rebirthButton, e -> {
-                            player.closeInventory();
-                            CustomRequirementInputManager.startRebirthBlockInput(player, "armor", armorId);
+                        // PROPIETARIO
+                        ItemStack ownerButton = new ItemStack(Material.NAME_TAG);
+                        ItemMeta ownerMeta = ownerButton.getItemMeta();
+                        ownerMeta.setDisplayName(CC.translate("&a&lPropietario"));
+                        List<String> ownerLore = new ArrayList<>();
+                        ownerLore.add(CC.translate("&7Solo el jugador que recibe la armadura"));
+                        ownerLore.add(CC.translate("&7podrá equiparla/usarla."));
+                        ownerLore.add("");
+                        ownerLore.add(CC.translate(armor.isOwnerOnly() ? "&a✓ ACTIVADO" : "&c✗ DESACTIVADO"));
+                        ownerLore.add("");
+                        ownerLore.add(CC.translate("&a[CLICK PARA ALTERNAR]"));
+                        ownerMeta.setLore(ownerLore);
+                        ownerButton.setItemMeta(ownerMeta);
+                        contents.set(2, 4, ClickableItem.of(ownerButton, e -> {
+                            armor.setOwnerOnly(!armor.isOwnerOnly());
+                            org.debentialc.customitems.tools.storage.CustomArmorStorage.getInstance().saveArmor(armor);
+                            player.sendMessage("");
+                            player.sendMessage(CC.translate(armor.isOwnerOnly() ? "&a✓ La armadura ahora tiene propietario" : "&c✓ La armadura ya no tiene propietario"));
+                            player.sendMessage("");
+                            createAdvancedOptionsMenu(armorId).open(player);
                         }));
 
-                        // PERMISO
-                        ItemStack permButton = new ItemStack(Material.TRIPWIRE_HOOK);
-                        ItemMeta permMeta = permButton.getItemMeta();
-                        permMeta.setDisplayName(CC.translate("&c&lPermiso Requerido"));
-                        List<String> permLore = new ArrayList<>();
-                        permLore.add(CC.translate("&7Restringe el uso/equipado de la armadura"));
-                        permLore.add(CC.translate("&7a jugadores con un permiso."));
-                        permLore.add("");
-                        if (armor.getRequiredPermission() != null && !armor.getRequiredPermission().isEmpty()) {
-                            permLore.add(CC.translate("&7Permiso: &f" + armor.getRequiredPermission()));
+                        // COOLDOWN / EXPIRACIÓN
+                        ItemStack cooldownButton = new ItemStack(Material.WATCH);
+                        ItemMeta cooldownMeta = cooldownButton.getItemMeta();
+                        cooldownMeta.setDisplayName(CC.translate("&4&lCooldown"));
+                        List<String> cooldownLore = new ArrayList<>();
+                        cooldownLore.add(CC.translate("&7Tiempo de vida real de la armadura"));
+                        cooldownLore.add(CC.translate("&7Al expirar desaparece de inventarios/cofres/etc"));
+                        cooldownLore.add("");
+                        if (armor.getExpirationSeconds() > 0) {
+                            cooldownLore.add(CC.translate("&7Actual: &f" + BoosterParser.formatSecondsToTime(armor.getExpirationSeconds())));
                         } else {
-                            permLore.add(CC.translate("&cSin permiso requerido"));
+                            cooldownLore.add(CC.translate("&cSin cooldown de expiración"));
                         }
-                        permLore.add("");
-                        permLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
-                        permLore.add(CC.translate("&7Escribe &c'eliminar' &7para quitar"));
-                        permMeta.setLore(permLore);
-                        permButton.setItemMeta(permMeta);
-                        contents.set(2, 6, ClickableItem.of(permButton, e -> {
-                            player.closeInventory();
-                            CustomRequirementInputManager.startPermissionInput(player, "armor", armorId);
+                        cooldownLore.add("");
+                        cooldownLore.add(CC.translate("&a[CLICK PARA CONFIGURAR]"));
+                        cooldownLore.add(CC.translate("&7Formato: 30m, 1h, 2d, 7d, 30s"));
+                        cooldownMeta.setLore(cooldownLore);
+                        cooldownButton.setItemMeta(cooldownMeta);
+                        contents.set(2, 5, ClickableItem.of(cooldownButton, e -> {
+                            ArmorExpirationInputManager.startExpirationInput(player, armorId);
                         }));
 
                         // BOTÓN ATRÁS

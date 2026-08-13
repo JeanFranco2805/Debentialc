@@ -6,6 +6,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomItem;
 import org.debentialc.customitems.commands.CustomItemCommand;
+import org.debentialc.customitems.tools.nbt.CustomItemTagging;
 import org.debentialc.customitems.tools.nbt.NbtHandler;
 import org.debentialc.customitems.tools.nbt.NbtItemBuilder;
 import org.debentialc.customitems.tools.storage.CustomItemStorage;
@@ -137,6 +138,13 @@ public class ItemEditManager {
             player.sendMessage(CC.translate("&c✗ Error al crear el item. Revisa su configuración."));
             player.sendMessage("");
             return;
+        }
+
+        if (customItem.isOwnerOnly()) {
+            itemStack = CustomItemTagging.applyOwner(itemStack, player);
+        }
+        if (customItem.getExpirationSeconds() > 0) {
+            itemStack = CustomItemTagging.applyExpiration(itemStack, customItem.getExpirationSeconds());
         }
 
         java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);

@@ -2,6 +2,7 @@ package org.debentialc.factions;
 
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.cmd.CmdFactions;
+import com.massivecraft.massivecore.cmd.MassiveCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.event.Listener;
@@ -14,6 +15,9 @@ import org.debentialc.factions.cmd.CmdFactionZone;
 import org.debentialc.factions.cmd.CmdFactionZoneClaim;
 import org.debentialc.factions.cmd.CmdFactionZoneUnclaim;
 import org.debentialc.factions.zones.FactionZoneListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FactionsModule {
 
@@ -43,6 +47,19 @@ public class FactionsModule {
             outerCmd.addSubCommand(new CmdFactionWarpCommand());
             outerCmd.addSubCommand(new CmdFactionAdminZone());
             outerCmd.addSubCommand(new CmdFactionZone());
+
+            // Reemplazar el givepower por defecto de Factions por el nuestro
+            List<MassiveCommand> subCommands = new ArrayList<>(outerCmd.getSubCommands());
+            subCommands.removeIf(child -> {
+                if (child == null) return false;
+                if (child instanceof CmdFactionGivePower) return false;
+                for (String alias : child.getAliases()) {
+                    if (alias.equalsIgnoreCase("givepower")) return true;
+                }
+                return false;
+            });
+            outerCmd.setSubCommands(subCommands);
+
             outerCmd.addSubCommand(new CmdFactionGivePower());
 
             Main.instance.getServer().getPluginManager().registerEvents((Listener) new FactionZoneListener(), Main.instance);

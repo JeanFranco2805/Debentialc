@@ -1,6 +1,5 @@
 package org.debentialc.raids.commands;
 
-import org.debentialc.raids.effects.RaidEffects;
 import org.debentialc.raids.managers.*;
 import org.debentialc.raids.models.*;
 import org.debentialc.service.commands.BaseCommand;
@@ -8,7 +7,6 @@ import org.debentialc.service.commands.Command;
 import org.debentialc.service.commands.CommandArgs;
 import org.debentialc.service.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -329,59 +327,29 @@ public class PartyCommand extends BaseCommand {
             return;
         }
 
-        if (raid.getPlayerSpawnPoint() == null) {
-            sendError(player, "La raid no tiene un punto de spawn para jugadores configurado");
-            return;
-        }
-
-        RaidSession session = RaidSessionManager.createRaidSession(raid, party);
-        PartyManager.setPartyStatus(party, PartyStatus.IN_RAID);
-
-        sendSuccess(player, "Raid iniciada: " + raid.getRaidName());
-
-        Location playerSpawn = raid.getPlayerSpawnPoint();
-        List<Player> teleportedPlayers = new ArrayList<>();
-
+        List<Player> partyPlayers = new ArrayList<>();
         for (UUID memberId : party.getActivePlayers()) {
             Player member = Bukkit.getPlayer(memberId);
             if (member != null) {
-                member.teleport(playerSpawn);
-                teleportedPlayers.add(member);
+                partyPlayers.add(member);
             }
         }
 
-        Bukkit.getScheduler().scheduleSyncDelayedTask(
-                org.debentialc.Main.instance,
-                () -> {
-                    Wave firstWave = session.getCurrentWave();
-                    if (firstWave != null) {
-                        for (SpawnPoint sp : firstWave.getSpawnPoints()) {
-                            sp.resetAliveCount();
-                        }
+        if (partyPlayers.size() < raid.getMinPlayers()) {
+            sendError(player, "Se necesitan al menos " + raid.getMinPlayers() + " jugadores online (actual: " + partyPlayers.size() + ")");
+            return;
+        }
+        if (partyPlayers.size() > raid.getMaxPlayers()) {
+            sendError(player, "Máximo " + raid.getMaxPlayers() + " jugadores permitidos (actual: " + partyPlayers.size() + ")");
+            return;
+        }
 
-                        firstWave.setStatus(WaveStatus.ACTIVE);
-
-                        String waveId = session.getSessionId() + "_wave_0";
-                        boolean spawned = NPCSpawnManager.spawnWaveNpcs(firstWave, waveId);
-
-                        if (spawned) {
-                            RaidEffects.raidStartEffect(teleportedPlayers, playerSpawn);
-
-                            for (Player member : teleportedPlayers) {
-                                RaidTitleManager.showRaidStart(member, raid.getRaidName());
-                                RaidSoundManager.playRaidStartSound(member);
-                                sendInfo(member, "¡La raid ha comenzado! Oleada 1/" + raid.getTotalWaves());
-                            }
-                        } else {
-                            for (Player member : teleportedPlayers) {
-                                sendError(member, "Error al spawnear enemigos. Contacta un admin.");
-                            }
-                            RaidSessionManager.failRaid(session);
-                        }
-                    }
-                },
-                40L
-        );
+        boolean started = RaidSessionManager.startRaid(raid, partyPlayers, player);
+        if (started) {
+            sendSuccess(player, "Raid iniciada: " + raid.getDisplayName());
+        } else {
+            sendError(player, "No se pudo iniciar la raid. Verifica la configuración.");
+        }
     }
 
     private void handleInfo(Player player) {

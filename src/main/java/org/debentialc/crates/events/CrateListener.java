@@ -10,16 +10,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.debentialc.crates.managers.CrateManager;
+import org.debentialc.crates.menus.CrateOpeningAnimation;
 import org.debentialc.crates.models.Crate;
-import org.debentialc.crates.models.CrateItem;
-import org.debentialc.crates.models.CrateRarity;
-import org.debentialc.crates.utils.CrateItemSerializer;
 import org.debentialc.service.CC;
-
-import java.util.HashMap;
 
 public class CrateListener implements Listener {
 
@@ -82,33 +80,29 @@ public class CrateListener implements Listener {
             player.sendMessage(CC.translate("&c✗ La crate &f" + crate.getDisplayName() + " &cno tiene items."));
             return;
         }
-        CrateItem won = CrateManager.getInstance().openCrate(crate.getId());
-        if (won == null) {
-            player.sendMessage(CC.translate("&c✗ Error al abrir la crate."));
-            return;
-        }
-        ItemStack reward = CrateItemSerializer.itemFromBase64(won.getItemBase64());
-        if (reward == null) {
-            player.sendMessage(CC.translate("&c✗ Error al crear el item ganado."));
-            return;
-        }
         if (key.getAmount() > 1) {
             key.setAmount(key.getAmount() - 1);
         } else {
             player.setItemInHand(null);
         }
-        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(reward);
-        for (ItemStack drop : leftover.values()) {
-            player.getWorld().dropItemNaturally(player.getLocation(), drop);
+        CrateOpeningAnimation.start(player, crate);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+        if (CrateOpeningAnimation.isInAnimation(player)) {
+            event.setCancelled(true);
         }
-        player.playSound(player.getLocation(), Sound.LEVEL_UP, 1.0f, 1.0f);
-        player.sendMessage(CC.translate("&a✓ ¡Has abierto la crate &f" + crate.getDisplayName() + "&a!"));
-        CrateRarity rarity = CrateManager.getInstance().getRarity(won.getRarityId());
-        if (rarity != null && rarity.isAnnounce()) {
-            String itemName = reward.hasItemMeta() && reward.getItemMeta().hasDisplayName()
-                    ? reward.getItemMeta().getDisplayName()
-                    : reward.getType().name();
-            Bukkit.broadcastMessage(CC.translate(rarity.getColor() + "¡" + player.getName() + " ha obtenido " + itemName + " de " + crate.getDisplayName() + "!"));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player)) return;
+        Player player = (Player) event.getPlayer();
+        if (CrateOpeningAnimation.isInAnimation(player)) {
+            CrateOpeningAnimation.cancel(player);
         }
     }
 }

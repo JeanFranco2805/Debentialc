@@ -30,6 +30,13 @@ public class GiveTpsCommandInterceptor implements Listener {
             return;
         }
 
+        Player player = event.getPlayer();
+        if (!player.hasPermission("debentialc.dartps")) {
+            player.sendMessage(CC.translate("&cNo tienes permiso para usar este comando."));
+            event.setCancelled(true);
+            return;
+        }
+
         String[] args = message.split(" ");
 
         if (args.length < 3) {

@@ -113,9 +113,15 @@ public class CustomArmorMenus {
                         for (int i = start; i < end; i++) {
                             String id = ids.get(i);
                             CustomArmor armor = RegisterItem.items.get(id);
+                            if (armor == null) continue;
 
-                            ItemStack displayItem = new ItemStack(armor.getMaterial());
+                            Material mat = Material.getMaterial(armor.getMaterial());
+                            if (mat == null || mat == Material.AIR) {
+                                mat = Material.IRON_CHESTPLATE;
+                            }
+                            ItemStack displayItem = new ItemStack(mat);
                             ItemMeta meta = displayItem.getItemMeta();
+                            if (meta == null) continue;
                             meta.setDisplayName(CC.translate("&b" + id));
 
                             List<String> lore = new ArrayList<>();

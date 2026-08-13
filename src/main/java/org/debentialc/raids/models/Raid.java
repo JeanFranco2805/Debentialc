@@ -39,6 +39,15 @@ public class Raid {
     private long cooldownSeconds;
 
     @Expose
+    private String menuItem;
+
+    @Expose
+    private String category;
+
+    @Expose
+    private int categoryOrder;
+
+    @Expose
     private int minPlayers;
 
     @Expose
@@ -78,6 +87,10 @@ public class Raid {
 
     public int getTotalWaves() {
         return waves.size();
+    }
+
+    public String getDisplayName() {
+        return (raidName != null && !raidName.isEmpty()) ? raidName : raidId;
     }
 
     public boolean isConfigured() {

@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.debentialc.service.CC;
 import org.debentialc.customitems.tools.ci.CustomItem;
 import org.debentialc.customitems.tools.durability.CustomDurabilityManager;
+import org.debentialc.customitems.tools.nbt.CustomItemTagging;
 import org.debentialc.customitems.tools.nbt.NbtHandler;
 import org.debentialc.service.commands.BaseCommand;
 import org.debentialc.service.commands.Command;
@@ -201,7 +202,7 @@ public class CustomItemCommand extends BaseCommand {
         player.sendMessage(CC.translate("&e/ci give <item_id> <jugador> <cantidad> &7- Dar un item custom a un jugador"));
 
         player.sendMessage(" ");
-        player.sendMessage(CC.translate("&7Stats: &fstr&7, &fcon&7, &fdex&7, &fwill&7, &fmnd"));
+            player.sendMessage(CC.translate("&7Stats: &fstr&7, &fcon&7, &fdex&7, &fwill&7, &fmnd&7, &fspi"));
         player.sendMessage(CC.translate("&7Efectos: &fHEALTHREGEN&7, &fKIREGEN&7, &fSTAMINAREGEN"));
         player.sendMessage(CC.translate("&8&l&m--------------------------------------"));
     }
@@ -526,6 +527,13 @@ public class CustomItemCommand extends BaseCommand {
             return;
         }
         itemStack.setAmount(cantidad);
+
+        if (customItem.isOwnerOnly()) {
+            itemStack = CustomItemTagging.applyOwner(itemStack, target);
+        }
+        if (customItem.getExpirationSeconds() > 0) {
+            itemStack = CustomItemTagging.applyExpiration(itemStack, customItem.getExpirationSeconds());
+        }
 
         HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(itemStack);
         if (!leftover.isEmpty()) {

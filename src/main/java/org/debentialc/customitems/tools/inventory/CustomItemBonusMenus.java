@@ -46,14 +46,15 @@ public class CustomItemBonusMenus {
                         contents.set(0, 4, ClickableItem.empty(titleItem));
 
                         // Stats disponibles
-                        String[] stats = {"str", "con", "dex", "will", "mnd"};
-                        String[] statNames = {"Fuerza", "Constitución", "Destreza", "Voluntad", "Mente"};
+                        String[] stats = {"str", "con", "dex", "will", "mnd", "spi"};
+                        String[] statNames = {"Fuerza", "Constitución", "Destreza", "Voluntad", "Mente", "Espíritu"};
                         Material[] statMaterials = {
                                 Material.DIAMOND_SWORD,
                                 Material.IRON_CHESTPLATE,
                                 Material.LEATHER_BOOTS,
                                 Material.WOOD_PICKAXE,
-                                Material.BOOK
+                                Material.BOOK,
+                                Material.GLOWSTONE_DUST
                         };
 
                         int row = 1;

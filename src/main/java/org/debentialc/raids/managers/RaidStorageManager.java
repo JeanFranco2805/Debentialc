@@ -116,6 +116,7 @@ public class RaidStorageManager {
                 for (Raid raid : raidsArray) {
                     RaidManager.updateRaid(raid);
                 }
+                RaidManager.recalculateRaidCounter();
                 System.out.println("[Raids] Raids cargadas: " + raidsArray.length);
             }
 
@@ -146,6 +147,9 @@ public class RaidStorageManager {
             System.err.println("[Raids] Error al guardar raid individual: " + e.getMessage());
             e.printStackTrace();
         }
+
+        // Guardar también la lista maestra para que los cambios sobrevivan al reinicio.
+        saveAllRaids();
     }
 
     /**

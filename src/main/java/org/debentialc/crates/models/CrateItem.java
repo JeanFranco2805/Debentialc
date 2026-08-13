@@ -5,11 +5,17 @@ public class CrateItem {
     private String id;
     private String rarityId;
     private String itemBase64;
+    private double chance;
 
     public CrateItem(String id, String rarityId, String itemBase64) {
+        this(id, rarityId, itemBase64, 0.0);
+    }
+
+    public CrateItem(String id, String rarityId, String itemBase64, double chance) {
         this.id = id;
         this.rarityId = rarityId;
         this.itemBase64 = itemBase64;
+        this.chance = chance;
     }
 
     public String getId() {
@@ -34,5 +40,13 @@ public class CrateItem {
 
     public void setItemBase64(String itemBase64) {
         this.itemBase64 = itemBase64;
+    }
+
+    public double getChance() {
+        return chance;
+    }
+
+    public void setChance(double chance) {
+        this.chance = chance;
     }
 }

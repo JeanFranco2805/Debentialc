@@ -1,8 +1,11 @@
 package org.debentialc.raids.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.debentialc.raids.effects.RaidEffects;
 import org.debentialc.raids.models.*;
+import org.debentialc.service.CC;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +21,7 @@ public class RaidSessionManager {
     private static int sessionCounter = 0;
 
     /**
-     * Crea una nueva sesión de raid
+     * Crea una nueva sesión de raid para una party
      */
     public static RaidSession createRaidSession(Raid raid, Party party) {
         if (raid == null || party == null) {
@@ -36,6 +39,25 @@ public class RaidSessionManager {
         }
 
         System.out.println("[Raids] Sesión de raid creada: " + sessionId + " - Raid: " + raid.getRaidId());
+        return session;
+    }
+
+    /**
+     * Crea una nueva sesión de raid para un único jugador (sin party)
+     */
+    public static RaidSession createRaidSession(Raid raid, Player player) {
+        if (raid == null || player == null) {
+            return null;
+        }
+
+        String sessionId = "session_" + (++sessionCounter) + "_" + System.currentTimeMillis();
+        Set<UUID> players = new HashSet<>(Collections.singletonList(player.getUniqueId()));
+        RaidSession session = new RaidSession(sessionId, raid, players);
+
+        activeSessions.put(sessionId, session);
+        playerToSession.put(player.getUniqueId(), sessionId);
+
+        System.out.println("[Raids] Sesión de raid en solitario creada: " + sessionId + " - Raid: " + raid.getRaidId());
         return session;
     }
 
@@ -151,7 +173,12 @@ public class RaidSessionManager {
         System.out.println("[Raids] Duración: " + session.getDurationSeconds() + "s");
         System.out.println("[Raids] Jugadores activos: " + session.getActivePlayers().size());
 
-        for (UUID playerId : session.getActivePlayers()) {
+        Set<UUID> allParticipants = new HashSet<>();
+        allParticipants.addAll(session.getActivePlayers());
+        allParticipants.addAll(session.getDeadPlayers());
+        allParticipants.addAll(session.getLeftPlayers());
+
+        for (UUID playerId : allParticipants) {
             CooldownManager.setCooldown(playerId, session.getRaid().getRaidId(),
                     session.getRaid().getCooldownSeconds());
         }
@@ -170,7 +197,14 @@ public class RaidSessionManager {
         session.setStatus(RaidStatus.FAILED);
         session.setEndTime(System.currentTimeMillis());
 
-        System.out.println("[Raids] Raid fallida: " + session.getSessionId());        removeSession(session.getSessionId());
+        // Despawnear todos los NPCs de la sesión (oleadas completadas y actual)
+        for (int i = 0; i <= session.getCurrentWaveIndex(); i++) {
+            String waveId = session.getSessionId() + "_wave_" + i;
+            NPCSpawnManager.despawnWaveNpcs(waveId);
+        }
+
+        System.out.println("[Raids] Raid fallida: " + session.getSessionId());
+        removeSession(session.getSessionId());
     }
 
     /**
@@ -250,7 +284,7 @@ public class RaidSessionManager {
         StringBuilder sb = new StringBuilder();
         sb.append("§6=== Información de Sesión ===\n");
         sb.append("§eID: §f").append(session.getSessionId()).append("\n");
-        sb.append("§eRaid: §f").append(session.getRaid().getRaidName()).append("\n");
+        sb.append("§eRaid: §f").append(session.getRaid().getDisplayName()).append("\n");
         sb.append("§eOleada: §f").append(session.getCurrentWaveIndex() + 1).append("/")
                 .append(session.getRaid().getTotalWaves()).append("\n");
         sb.append("§eProgreso: §f").append(session.getProgress()).append("%\n");
@@ -288,52 +322,175 @@ public class RaidSessionManager {
         }
 
         Wave wave = session.getCurrentWave();
-        Location arenaSpawn = session.getRaid().getArenaSpawnPoint();
-
-        if (arenaSpawn == null) {
-            System.out.println("[Raids] ERROR: Arena spawn no configurado");
-            return;
-        }
-
-        UUID firstPlayer = session.getActivePlayers().iterator().next();
-        Player player = org.bukkit.Bukkit.getPlayer(firstPlayer);
-
-        if (player == null) {
-            System.out.println("[Raids] ERROR: No hay jugadores online para spawn ear NPCs");
-            return;
-        }
+        String waveId = session.getSessionId() + "_wave_" + session.getCurrentWaveIndex();
 
         System.out.println("[Raids] Spawneando NPCs para oleada " + wave.getWaveNumber());
 
-        for (SpawnPoint spawnPoint : wave.getSpawnPoints()) {
-            Location spawnLoc = spawnPoint.getLocation();
+        boolean spawned = NPCSpawnManager.spawnWaveNpcs(wave, waveId);
 
-            if (spawnLoc == null) {
-                System.out.println("[Raids] ADVERTENCIA: Spawn point sin ubicación");
-                continue;
-            }
-
-            for (int i = 0; i < spawnPoint.getQuantity(); i++) {
-                org.debentialc.service.General.spawnNpc(
-                        spawnLoc.getBlockX(),
-                        spawnLoc.getBlockY(),
-                        spawnLoc.getBlockZ(),
-                        spawnPoint.getNpcTab(),
-                        spawnPoint.getNpcName(),
-                        player
-                );
-            }
-
-            System.out.println(String.format("[Raids] Spawneados %dx %s (Tab: %d) en %d,%d,%d",
-                    spawnPoint.getQuantity(),
-                    spawnPoint.getNpcName(),
-                    spawnPoint.getNpcTab(),
-                    spawnLoc.getBlockX(),
-                    spawnLoc.getBlockY(),
-                    spawnLoc.getBlockZ()
-            ));
+        if (!spawned) {
+            System.out.println("[Raids] ERROR: No se pudo spawnear ningún NPC para la oleada " + wave.getWaveNumber());
         }
     }
+    /**
+     * Reinicia una raid para todos los jugadores de la sesión indicada.
+     */
+    public static boolean restartRaid(RaidSession session, org.bukkit.command.CommandSender initiator) {
+        if (session == null) {
+            return false;
+        }
+
+        Raid raid = session.getRaid();
+        if (raid == null) {
+            return false;
+        }
+
+        Set<UUID> allPlayers = new HashSet<>();
+        allPlayers.addAll(session.getActivePlayers());
+        allPlayers.addAll(session.getDeadPlayers());
+        allPlayers.addAll(session.getLeftPlayers());
+
+        List<Player> onlinePlayers = new ArrayList<>();
+        for (UUID playerId : allPlayers) {
+            Player p = org.bukkit.Bukkit.getPlayer(playerId);
+            if (p != null) {
+                onlinePlayers.add(p);
+            }
+        }
+
+        if (onlinePlayers.isEmpty()) {
+            return false;
+        }
+
+        // Limpiar NPCs de la sesión y eliminar la sesión actual
+        for (int i = 0; i <= session.getCurrentWaveIndex(); i++) {
+            String waveId = session.getSessionId() + "_wave_" + i;
+            NPCSpawnManager.despawnWaveNpcs(waveId);
+        }
+        removeSession(session.getSessionId());
+
+        return startRaid(raid, onlinePlayers, initiator, true);
+    }
+
+    /**
+     * Inicia una raid para una lista de jugadores (usado por /raid start y /party start).
+     * Retorna true si se inició correctamente.
+     */
+    public static boolean startRaid(Raid raid, List<Player> players, org.bukkit.command.CommandSender initiator) {
+        return startRaid(raid, players, initiator, false);
+    }
+
+    private static boolean startRaid(Raid raid, List<Player> players, org.bukkit.command.CommandSender initiator, boolean ignoreCooldown) {
+        if (raid == null || players == null || players.isEmpty()) {
+            return false;
+        }
+
+        if (raid.getPlayerSpawnPoint() == null) {
+            if (initiator != null) {
+                initiator.sendMessage("§c✗ La raid no tiene punto de spawn para jugadores");
+            }
+            return false;
+        }
+
+        // Validación centralizada de cooldown (solo si no se pide ignorarlo)
+        if (!ignoreCooldown) {
+            for (Player player : players) {
+                if (player == null || !player.isOnline()) {
+                    continue;
+                }
+                if (CooldownManager.hasCooldown(player.getUniqueId(), raid.getRaidId())) {
+                    if (initiator != null) {
+                        String timeFormatted = CooldownManager.getCooldownFormattedTime(player.getUniqueId(), raid.getRaidId());
+                        initiator.sendMessage(CC.translate("&c✗ &f" + player.getName() + " tiene cooldown activo"));
+                        initiator.sendMessage(CC.translate("&7Tiempo restante: &f" + timeFormatted));
+                    }
+                    return false;
+                }
+            }
+        }
+
+        int onlineCount = 0;
+        for (Player player : players) {
+            if (player != null && player.isOnline()) {
+                onlineCount++;
+            }
+        }
+        if (onlineCount < raid.getMinPlayers() || onlineCount > raid.getMaxPlayers()) {
+            if (initiator != null) {
+                initiator.sendMessage(CC.translate("&c✗ La raid requiere entre &f" + raid.getMinPlayers() + "-" + raid.getMaxPlayers() + "&c jugadores online"));
+            }
+            return false;
+        }
+
+        RaidSession session;
+        if (players.size() == 1) {
+            session = createRaidSession(raid, players.get(0));
+        } else {
+            // Para múltiples jugadores se requiere una party ya creada
+            Party party = PartyManager.getPlayerParty(players.get(0).getUniqueId());
+            if (party == null) {
+                if (initiator != null) {
+                    initiator.sendMessage("§c✗ Los jugadores no están en una party");
+                }
+                return false;
+            }
+            session = createRaidSession(raid, party);
+            PartyManager.setPartyStatus(party, PartyStatus.IN_RAID);
+        }
+
+        if (session == null) {
+            if (initiator != null) {
+                initiator.sendMessage("§c✗ No se pudo crear la sesión de raid");
+            }
+            return false;
+        }
+
+        Location playerSpawn = raid.getPlayerSpawnPoint();
+        List<Player> teleportedPlayers = new ArrayList<>();
+
+        for (Player player : players) {
+            if (player != null && player.isOnline()) {
+                player.teleport(playerSpawn);
+                teleportedPlayers.add(player);
+            }
+        }
+
+        Bukkit.getScheduler().scheduleSyncDelayedTask(
+                org.debentialc.Main.instance,
+                () -> {
+                    Wave firstWave = session.getCurrentWave();
+                    if (firstWave != null) {
+                        for (SpawnPoint sp : firstWave.getSpawnPoints()) {
+                            sp.resetAliveCount();
+                        }
+
+                        firstWave.setStatus(WaveStatus.ACTIVE);
+
+                        String waveId = session.getSessionId() + "_wave_0";
+                        boolean spawned = NPCSpawnManager.spawnWaveNpcs(firstWave, waveId);
+
+                        if (spawned) {
+                            RaidEffects.raidStartEffect(teleportedPlayers, playerSpawn);
+
+                            for (Player member : teleportedPlayers) {
+                                RaidTitleManager.showRaidStart(member, raid.getDisplayName());
+                                RaidSoundManager.playRaidStartSound(member);
+                                member.sendMessage("§bℹ §f¡La raid ha comenzado! Oleada 1/" + raid.getTotalWaves());
+                            }
+                        } else {
+                            for (Player member : teleportedPlayers) {
+                                member.sendMessage("§c✗ §fError al spawnear enemigos. Contacta un admin.");
+                            }
+                            failRaid(session);
+                        }
+                    }
+                },
+                40L
+        );
+
+        return true;
+    }
+
     /**
      * Programa la eliminación de una sesión (después de 5 minutos)
      */

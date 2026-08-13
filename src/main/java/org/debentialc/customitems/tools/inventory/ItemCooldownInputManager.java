@@ -26,8 +26,8 @@ public class ItemCooldownInputManager {
         playersInputting.put(player.getUniqueId(), new CooldownInputState(itemId));
         player.closeInventory();
         player.sendMessage("");
-        player.sendMessage(CC.translate("&6&lConfigurar Cooldown"));
-        player.sendMessage(CC.translate("&7Escribe el tiempo de cooldown"));
+        player.sendMessage(CC.translate("&6&lConfigurar Delay"));
+        player.sendMessage(CC.translate("&7Tiempo de espera entre usos del item"));
         player.sendMessage(CC.translate("&7Formatos: &f50m, 1h, 2d, 30s"));
         player.sendMessage(CC.translate("&7Escribe &c0 &7para desactivar"));
         player.sendMessage(CC.translate("&7Escribe &ccancelar &7para salir"));
@@ -63,13 +63,13 @@ public class ItemCooldownInputManager {
             }
 
             CustomItem item = CustomItemCommand.items.get(state.itemId);
-            item.setCooldownSeconds(seconds);
+            item.setDelaySeconds(seconds);
             CustomItemStorage.getInstance().saveItem(item);
 
             if (seconds > 0) {
-                player.sendMessage(CC.translate("&a✓ Cooldown configurado: &f" + BoosterParser.formatSecondsToTime(seconds)));
+                player.sendMessage(CC.translate("&a✓ Delay configurado: &f" + BoosterParser.formatSecondsToTime(seconds)));
             } else {
-                player.sendMessage(CC.translate("&a✓ Cooldown desactivado"));
+                player.sendMessage(CC.translate("&a✓ Delay desactivado"));
             }
 
         } catch (IllegalArgumentException e) {

@@ -8,6 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.debentialc.raids.managers.RaidCategoryManager;
+import org.debentialc.raids.managers.RaidConfig;
 import org.debentialc.raids.managers.RaidManager;
 import org.debentialc.raids.models.Raid;
 import org.debentialc.service.CC;
@@ -51,16 +53,22 @@ public class RaidListMenu {
                             for (int i = start; i < end; i++) {
                                 Raid raid = raids.get(i);
 
-                                Material mat = raid.isEnabled() ? Material.DIAMOND_SWORD : Material.IRON_SWORD;
-                                ItemStack raidItem = new ItemStack(mat);
+                                ItemStack raidItem;
+                                if (raid.getMenuItem() != null && !raid.getMenuItem().isEmpty()) {
+                                    raidItem = RaidConfig.parseItem(raid.getMenuItem()).clone();
+                                } else {
+                                    Material mat = raid.isEnabled() ? Material.DIAMOND_SWORD : Material.IRON_SWORD;
+                                    raidItem = new ItemStack(mat);
+                                }
                                 ItemMeta raidMeta = raidItem.getItemMeta();
-                                raidMeta.setDisplayName(CC.translate("&6&l" + raid.getRaidName()));
+                                raidMeta.setDisplayName(CC.translate("&6&l" + raid.getDisplayName()));
 
                                 List<String> lore = new ArrayList<>();
                                 lore.add(CC.translate("&7ID: &f" + raid.getRaidId()));
                                 lore.add(CC.translate("&7Descripción: &f" + (raid.getDescription() != null ? raid.getDescription() : "Sin descripción")));
                                 lore.add(CC.translate("&7Oleadas: &f" + raid.getTotalWaves()));
                                 lore.add(CC.translate("&7Jugadores: &f" + raid.getMinPlayers() + "-" + raid.getMaxPlayers()));
+                                lore.add(CC.translate("&7Categoría: &f" + RaidCategoryManager.getDisplayName(raid.getCategory())));
                                 lore.add(CC.translate("&7Cooldown: &f" + (raid.getCooldownSeconds() / 60) + " min"));
                                 lore.add(CC.translate("&7Estado: " + (raid.isEnabled() ? "&a✓ Habilitada" : "&c✗ Deshabilitada")));
                                 lore.add(CC.translate("&7Configurada: " + (raid.isConfigured() ? "&a✓ Sí" : "&c✗ No")));
@@ -117,7 +125,7 @@ public class RaidListMenu {
                         backMeta.setDisplayName(CC.translate("&c← Atrás"));
                         backButton.setItemMeta(backMeta);
                         contents.set(4, 8, ClickableItem.of(backButton, e -> {
-                            RaidMainMenu.createMainMenu().open(player);
+                            RaidAdminCategoryMenu.open(player);
                         }));
                     }
 

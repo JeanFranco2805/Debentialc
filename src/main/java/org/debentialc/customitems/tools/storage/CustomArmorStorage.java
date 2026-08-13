@@ -49,6 +49,10 @@ public class CustomArmorStorage {
         reload();
     }
 
+    public String getArmorFilePath() {
+        return armorFile.getAbsolutePath();
+    }
+
     public void reload() {
         if (!armorFile.exists()) {
             try {
@@ -129,9 +133,11 @@ public class CustomArmorStorage {
                 armorConfig.set(path + ".effects", null);
             }
 
-            saveConfig();
+            armorConfig.set(path + ".ownerOnly", armor.isOwnerOnly());
+            armorConfig.set(path + ".expirationSeconds", armor.getExpirationSeconds() > 0 ? armor.getExpirationSeconds() : null);
 
             RegisterItem.items.put(armor.getId(), armor);
+            saveConfig();
         }
     }
 
@@ -225,6 +231,9 @@ public class CustomArmorStorage {
             }
             armor.setEffects(effects);
         }
+
+        armor.setOwnerOnly(armorConfig.getBoolean(path + ".ownerOnly", false));
+        armor.setExpirationSeconds(armorConfig.getInt(path + ".expirationSeconds", 0));
 
         return armor;
     }

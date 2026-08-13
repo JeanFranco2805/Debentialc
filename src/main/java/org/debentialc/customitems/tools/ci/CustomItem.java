@@ -29,7 +29,8 @@ public class CustomItem {
     private boolean unbreakable = false;
 
     private boolean consumable = false;
-    private int cooldownSeconds = 0;
+    private int delaySeconds = 0;
+    private int expirationSeconds = 0;
 
     private List<String> commands = new ArrayList<>();
 
@@ -47,6 +48,8 @@ public class CustomItem {
     private String requiredRebirthBlock = null;
     private int requiredRebirthLevel = 0;
     private String requiredPermission = null;
+
+    private boolean ownerOnly = false;
 
     public CustomItem setCategory(String category) {
         this.category = category;
@@ -123,12 +126,45 @@ public class CustomItem {
         return this;
     }
 
-    public int getCooldownSeconds() {
-        return cooldownSeconds;
+    public int getDelaySeconds() {
+        return delaySeconds;
     }
 
+    public CustomItem setDelaySeconds(int delaySeconds) {
+        this.delaySeconds = delaySeconds;
+        return this;
+    }
+
+    /**
+     * @deprecated use getDelaySeconds()
+     */
+    public int getCooldownSeconds() {
+        return delaySeconds;
+    }
+
+    /**
+     * @deprecated use setDelaySeconds(int)
+     */
     public CustomItem setCooldownSeconds(int cooldownSeconds) {
-        this.cooldownSeconds = cooldownSeconds;
+        this.delaySeconds = cooldownSeconds;
+        return this;
+    }
+
+    public int getExpirationSeconds() {
+        return expirationSeconds;
+    }
+
+    public CustomItem setExpirationSeconds(int expirationSeconds) {
+        this.expirationSeconds = expirationSeconds;
+        return this;
+    }
+
+    public boolean isOwnerOnly() {
+        return ownerOnly;
+    }
+
+    public CustomItem setOwnerOnly(boolean ownerOnly) {
+        this.ownerOnly = ownerOnly;
         return this;
     }
 

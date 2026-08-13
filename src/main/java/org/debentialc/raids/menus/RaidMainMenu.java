@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.debentialc.raids.managers.RaidCategoryManager;
 import org.debentialc.raids.managers.RaidManager;
 import org.debentialc.raids.managers.RaidSessionManager;
 import org.debentialc.raids.managers.PartyManager;
@@ -93,6 +94,30 @@ public class RaidMainMenu {
                         sessionsButton.setItemMeta(sessionsMeta);
                         contents.set(1, 6, ClickableItem.of(sessionsButton, e -> {
                             RaidSessionsMenu.createSessionsMenu().open(player);
+                        }));
+
+                        // CATEGORÍAS
+                        ItemStack categoryButton = new ItemStack(Material.BOOKSHELF);
+                        ItemMeta categoryMeta = categoryButton.getItemMeta();
+                        categoryMeta.setDisplayName(CC.translate("&6&lAdministrar Categorías"));
+                        List<String> categoryLore = new ArrayList<>();
+                        categoryLore.add(CC.translate("&7Crear, editar o eliminar categorías"));
+                        categoryLore.add("");
+                        List<org.debentialc.raids.models.RaidCategory> cats = RaidCategoryManager.getAllCategories();
+                        if (cats.isEmpty()) {
+                            categoryLore.add(CC.translate("&cNo hay categorías creadas"));
+                        } else {
+                            categoryLore.add(CC.translate("&7Categorías existentes:"));
+                            for (org.debentialc.raids.models.RaidCategory cat : cats) {
+                                categoryLore.add(CC.translate("&e- &f" + cat.getDisplayName()));
+                            }
+                        }
+                        categoryLore.add("");
+                        categoryLore.add(CC.translate("&6[CLICK PARA ADMINISTRAR]"));
+                        categoryMeta.setLore(categoryLore);
+                        categoryButton.setItemMeta(categoryMeta);
+                        contents.set(1, 6, ClickableItem.of(categoryButton, e -> {
+                            RaidCategoryAdminMenu.open(player);
                         }));
 
                         // AYUDA

@@ -87,7 +87,8 @@ public class CustomItemStorage {
             itemsConfig.set(path + ".maxDurability", item.getMaxDurability());
             itemsConfig.set(path + ".unbreakable", item.isUnbreakable());
             itemsConfig.set(path + ".consumable", item.isConsumable());
-            itemsConfig.set(path + ".cooldownSeconds", item.getCooldownSeconds());
+            itemsConfig.set(path + ".delaySeconds", item.getDelaySeconds());
+            itemsConfig.set(path + ".expirationSeconds", item.getExpirationSeconds());
             itemsConfig.set(path + ".commands", item.getCommands());
             itemsConfig.set(path + ".tpValue", item.getTpValue());
             itemsConfig.set(path + ".tpConsumeStack", item.isTpConsumeStack());
@@ -97,6 +98,7 @@ public class CustomItemStorage {
             itemsConfig.set(path + ".requiredRebirthBlock", item.getRequiredRebirthBlock());
             itemsConfig.set(path + ".requiredRebirthLevel", item.getRequiredRebirthLevel() > 0 ? item.getRequiredRebirthLevel() : null);
             itemsConfig.set(path + ".requiredPermission", item.getRequiredPermission());
+            itemsConfig.set(path + ".ownerOnly", item.isOwnerOnly());
 
             saveConfig();
         }
@@ -174,7 +176,14 @@ public class CustomItemStorage {
         item.setMaxDurability(itemsConfig.getInt(path + ".maxDurability", -1));
         item.setUnbreakable(itemsConfig.getBoolean(path + ".unbreakable", false));
         item.setConsumable(itemsConfig.getBoolean(path + ".consumable", false));
-        item.setCooldownSeconds(itemsConfig.getInt(path + ".cooldownSeconds", 0));
+        int delaySeconds = 0;
+        if (itemsConfig.contains(path + ".delaySeconds")) {
+            delaySeconds = itemsConfig.getInt(path + ".delaySeconds", 0);
+        } else if (itemsConfig.contains(path + ".cooldownSeconds")) {
+            delaySeconds = itemsConfig.getInt(path + ".cooldownSeconds", 0);
+        }
+        item.setDelaySeconds(delaySeconds);
+        item.setExpirationSeconds(itemsConfig.getInt(path + ".expirationSeconds", 0));
         item.setCommands(itemsConfig.getStringList(path + ".commands"));
         item.setTpValue(itemsConfig.getInt(path + ".tpValue", 0));
         item.setTpConsumeStack(itemsConfig.getBoolean(path + ".tpConsumeStack", false));
@@ -190,6 +199,7 @@ public class CustomItemStorage {
             item.setRequiredRebirthLevel(itemsConfig.getInt(path + ".requiredRebirthLevel", 0));
         }
         item.setRequiredPermission(itemsConfig.getString(path + ".requiredPermission", null));
+        item.setOwnerOnly(itemsConfig.getBoolean(path + ".ownerOnly", false));
 
         if (itemsConfig.contains(path + ".bonusStat")) {
             HashMap<String, Double> bonusStat = new HashMap<>();

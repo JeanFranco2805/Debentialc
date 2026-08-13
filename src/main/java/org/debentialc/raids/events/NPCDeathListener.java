@@ -1,10 +1,15 @@
 package org.debentialc.raids.events;
 
+import noppes.npcs.api.entity.IEntity;
 import noppes.npcs.api.event.INpcEvent;
-import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.debentialc.Main;
 import org.debentialc.raids.effects.RaidEffects;
 import org.debentialc.raids.managers.NPCSpawnManager;
@@ -15,6 +20,7 @@ import org.debentialc.raids.models.RaidSession;
 import org.debentialc.raids.models.SpawnPoint;
 import org.debentialc.raids.models.Wave;
 import org.debentialc.raids.models.WaveStatus;
+import org.debentialc.service.CC;
 
 import java.util.*;
 
@@ -23,7 +29,6 @@ public class NPCDeathListener implements Listener {
     private static final Set<String> rewardsGiven = new HashSet<>();
     private static final Set<String> activeCountdowns = new HashSet<>();
     private static final Map<String, Integer> countdownTasks = new HashMap<>();
-
     public void onNpcDie(INpcEvent.DiedEvent event) {
         try {
 
@@ -52,6 +57,71 @@ public class NPCDeathListener implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void onNpcDamage(INpcEvent.DamagedEvent event) {
+        try {
+            int entityId = event.getNpc().getEntityId();
+            Player attacker = null;
+            IEntity source = event.getSource();
+            if (source != null) {
+                try {
+                    UUID uuid = UUID.fromString(source.getUniqueID());
+                    attacker = Bukkit.getPlayer(uuid);
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            if (!canDamageRaidNpc(entityId, attacker)) {
+                if (attacker != null) {
+                    attacker.sendMessage(CC.translate("&cNo puedes dañar a este NPC de raid."));
+                }
+                event.setDamage(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityDamage(EntityDamageByEntityEvent event) {
+        try {
+            int entityId = event.getEntity().getEntityId();
+            org.bukkit.entity.Entity damager = event.getDamager();
+            Player attacker = null;
+            if (damager instanceof Player) {
+                attacker = (Player) damager;
+            } else if (damager instanceof Projectile) {
+                Projectile projectile = (Projectile) damager;
+                if (projectile.getShooter() instanceof Player) {
+                    attacker = (Player) projectile.getShooter();
+                }
+            }
+            if (!canDamageRaidNpc(entityId, attacker)) {
+                event.setCancelled(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean canDamageRaidNpc(int entityId, Player attacker) {
+        String waveId = NPCSpawnManager.getWaveIdForNpc(entityId);
+        // Solo aplica a NPCs spawneados por el sistema de raids
+        if (waveId == null) {
+            return true;
+        }
+
+        RaidSession session = getSessionByWaveId(waveId);
+        if (session == null) {
+            // Raid ya no está activa: no permitir daño a NPCs huérfanos
+            return false;
+        }
+
+        if (attacker == null) {
+            return false;
+        }
+
+        return session.getActivePlayers().contains(attacker.getUniqueId());
     }
 
     private RaidSession getSessionByWaveId(String waveId) {
@@ -112,28 +182,6 @@ public class NPCDeathListener implements Listener {
         // --- Sounds only (no messages from effects/title managers) ---
         for (Player player : players) {
             RaidSoundManager.playWaveCompleteSound(player);
-        }
-
-        // --- Single, unified message block per player ---
-        for (Player player : players) {
-            player.sendMessage("");
-            player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-
-            if (isLastWave) {
-                player.sendMessage("§6§l  🎉 ¡ÚLTIMA OLEADA COMPLETADA! 🎉");
-                player.sendMessage(String.format("§a  Oleadas: §f%d/%d §a✓", totalWaves, totalWaves));
-                player.sendMessage("§e  ¡Todas las oleadas han sido derrotadas!");
-            } else {
-                player.sendMessage(String.format("§a§l  ✓ OLEADA %d/%d COMPLETADA ✓", waveNumber, totalWaves));
-                player.sendMessage("");
-                player.sendMessage(String.format("§7  Progreso: §e[§a%s§7%s§e] §f%d%%",
-                        repeatString("█", waveNumber),
-                        repeatString("█", totalWaves - waveNumber),
-                        (waveNumber * 100) / totalWaves));
-            }
-
-            player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-            player.sendMessage("");
         }
 
         // Visual effect at player locations (no messages inside RaidEffects)
@@ -254,7 +302,7 @@ public class NPCDeathListener implements Listener {
     }
 
     private void completeRaidWithEffects(RaidSession session) {
-        String raidName = session.getRaid().getRaidName();
+        String raidName = session.getRaid().getDisplayName();
         List<Player> players = getActivePlayers(session);
 
         // Sounds only
@@ -266,22 +314,23 @@ public class NPCDeathListener implements Listener {
         long minutes = duration / 60;
         long seconds = duration % 60;
 
-        // Single unified victory message block
+        // Single clean centered victory message
+        String survivorText = players.size() == 1 ? "sobreviviente" : "sobrevivientes";
+        String border = repeatString("▬", 53);
+        String line1 = center("&6&l✦ RAID COMPLETADA ✦", true);
+        String line2 = center("&7Raid: &f" + raidName);
+        String line3 = center(String.format("&7Oleadas: &f%d/%d &7completadas", session.getRaid().getTotalWaves(), session.getRaid().getTotalWaves()));
+        String line4 = center(String.format("&7Tiempo: &f%dm %ds", minutes, seconds));
+        String line5 = center(String.format("&7Jugadores: &f%d &7%s", players.size(), survivorText));
         for (Player player : players) {
             player.sendMessage("");
-            player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-            player.sendMessage("§6§l         🏆 ¡RAID COMPLETADA! 🏆");
-            player.sendMessage("");
-            player.sendMessage(String.format("§e  Raid: §f%s", raidName));
-            player.sendMessage(String.format("§e  Oleadas: §a%d/%d §fcompletadas §l✓",
-                    session.getRaid().getTotalWaves(),
-                    session.getRaid().getTotalWaves()));
-            player.sendMessage(String.format("§e  Tiempo: §f%dm %ds", minutes, seconds));
-            player.sendMessage(String.format("§e  Jugadores: §f%d sobrevivientes", players.size()));
-            player.sendMessage("");
-            player.sendMessage("§a  ✓ Todas las recompensas han sido otorgadas");
-            player.sendMessage("§7  Regresando al spawn...");
-            player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+            player.sendMessage(CC.translate("&8&l" + border));
+            player.sendMessage(CC.translate(line1));
+            player.sendMessage(CC.translate(line2));
+            player.sendMessage(CC.translate(line3));
+            player.sendMessage(CC.translate(line4));
+            player.sendMessage(CC.translate(line5));
+            player.sendMessage(CC.translate("&8&l" + border));
             player.sendMessage("");
         }
 
@@ -351,14 +400,6 @@ public class NPCDeathListener implements Listener {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
 
                         RaidSoundManager.playBuffSound(player);
-
-                        String rewardName = getRewardDisplayName(reward.getCommand());
-                        player.sendMessage("");
-                        player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-                        player.sendMessage("§6§l  ✦ RECOMPENSA ✦");
-                        player.sendMessage("§f" + rewardName);
-                        player.sendMessage("§8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-                        player.sendMessage("");
                     }
                 }
             }
@@ -415,6 +456,61 @@ public class NPCDeathListener implements Listener {
             sb.append(str);
         }
         return sb.toString();
+    }
+
+    private String center(String text) {
+        return center(text, false);
+    }
+
+    private String center(String text, boolean bold) {
+        int chatWidth = 300;
+        int spaceWidth = 4;
+        int textWidth = pixelWidth(text, bold);
+        int spaces = Math.max(0, (chatWidth - textWidth) / (2 * spaceWidth));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < spaces; i++) {
+            sb.append(' ');
+        }
+        sb.append(text);
+        return sb.toString();
+    }
+
+    private int pixelWidth(String text) {
+        return pixelWidth(text, false);
+    }
+
+    private int pixelWidth(String text, boolean bold) {
+        int width = 0;
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            // Saltar códigos de color § o & seguidos de un código de formato
+            if (c == '§' || c == '&') {
+                if (i + 1 < chars.length) {
+                    i++;
+                }
+                continue;
+            }
+            if (c >= 'A' && c <= 'Z') {
+                width += 6;
+            } else if (c >= 'a' && c <= 'z') {
+                width += 5;
+            } else if (c >= '0' && c <= '9') {
+                width += 6;
+            } else if (c == ' ') {
+                width += 4;
+            } else if (c == ':' || c == '/' || c == '.' || c == '-') {
+                width += 4;
+            } else if (c == '✦' || c == '★' || c == '✓' || c == '✗') {
+                width += 6;
+            } else {
+                width += 5;
+            }
+            if (bold) {
+                width += 1;
+            }
+        }
+        return width;
     }
 
     private String getWaveId(RaidSession session) {

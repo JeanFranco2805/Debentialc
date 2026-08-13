@@ -28,9 +28,10 @@ public class CustomManager {
             if (armor == null) continue;
             if (armor.getTypeId() == Material.AIR.getId()) continue;
             CustomArmor ci = item.toItemCustom(armor);
-            if (ci != null) {
-                applyBonusToPlayer(player, ci.getId(), ci.getValueByStat(), ci.getOperation());
+            if (ci == null || ci.getValueByStat() == null || ci.getValueByStat().isEmpty()) {
+                continue;
             }
+            applyBonusToPlayer(player, ci.getId(), ci.getValueByStat(), ci.getOperation());
         }
     }
 
@@ -43,9 +44,11 @@ public class CustomManager {
         CustomItemCommand itemCmd = new CustomItemCommand();
         CustomItem ci = itemCmd.toItemCustom(itemInHand);
 
-        if (ci != null && ci.isActive()) {
-            applyBonusToPlayer(player, ci.getId(), ci.getValueByStat(), ci.getOperation());
+        if (ci == null || !ci.isActive() || ci.getValueByStat() == null || ci.getValueByStat().isEmpty()) {
+            return;
         }
+
+        applyBonusToPlayer(player, ci.getId(), ci.getValueByStat(), ci.getOperation());
     }
 
     private static void applyBonusToPlayer(Player player, String itemId,
@@ -63,12 +66,48 @@ public class CustomManager {
                 playerArmorBonus.put(player.getUniqueId(), bonuses);
 
                 try {
-                    idbcPlayer.addBonusAttribute(General.BONUS_STATS.get(k.toUpperCase()), itemId,
-                            operation, v);
+                    String statKey = normalizeStat(k);
+                    if (statKey == null) return;
+                    String bonusStat = General.BONUS_STATS.get(statKey);
+                    if (bonusStat == null) return;
+                    idbcPlayer.addBonusAttribute(bonusStat, itemId, operation, v);
                 } catch (NullPointerException ignored) {
                 }
             });
-        } catch (Exception e) {
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static String normalizeStat(String stat) {
+        if (stat == null) return null;
+        String s = stat.trim().toUpperCase();
+        switch (s) {
+            case "STR":
+            case "STRENGTH":
+            case "FUERZA":
+                return "STR";
+            case "DEX":
+            case "DESTREZA":
+                return "DEX";
+            case "CON":
+            case "CONSTITUTION":
+            case "RESISTENCIA":
+                return "CON";
+            case "WIL":
+            case "WILL":
+            case "VOLUNTAD":
+                return "WIL";
+            case "MND":
+            case "MIND":
+            case "MENTE":
+                return "MND";
+            case "SPI":
+            case "SPIRIT":
+            case "ESPÍRITU":
+            case "ESPIRITU":
+                return "SPI";
+            default:
+                return General.BONUS_STATS.containsKey(s) ? s : null;
         }
     }
 
@@ -197,16 +236,29 @@ public class CustomManager {
                     if (k.equalsIgnoreCase("HEALTHREGEN")) {
                         int max = StatsCalculator.getMaxHealth(idbcPlayer);
                         int bonus = (int) (v * max);
-                        idbcPlayer.setHP(idbcPlayer.getHP() + bonus);
+                        int current = idbcPlayer.getHP();
+                        int next = Math.min(current + bonus, max);
+                        if (next > current) {
+                            idbcPlayer.setHP(next);
+                        }
                     }
                     if (k.equalsIgnoreCase("KIREGEN")) {
                         int max = StatsCalculator.getKiMax(idbcPlayer);
                         int bonus = (int) (v * max);
-                        idbcPlayer.setKi(idbcPlayer.getKi() + bonus);
+                        int current = idbcPlayer.getKi();
+                        int next = Math.min(current + bonus, max);
+                        if (next > current) {
+                            idbcPlayer.setKi(next);
+                        }
                     }
                     if (k.equalsIgnoreCase("STAMINAREGEN")) {
-                        int bonus = (int) (v * idbcPlayer.getStamina());
-                        idbcPlayer.setStamina(idbcPlayer.getStamina() + bonus);
+                        int max = StatsCalculator.getMaxStamina(idbcPlayer);
+                        int bonus = (int) (v * max);
+                        int current = idbcPlayer.getStamina();
+                        int next = Math.min(current + bonus, max);
+                        if (next > current) {
+                            idbcPlayer.setStamina(next);
+                        }
                     }
                     if (k.equalsIgnoreCase("KIREGEN"))
                         EffectsManager.spawnHologram(player, CC.translate("&9⚡"), 1.5, -1.0);

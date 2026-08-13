@@ -23,14 +23,27 @@ import java.util.*;
  */
 public class RaidWaveConfigMenu {
 
+    private static final int SPAWNS_PER_PAGE = 5;
+    private static final int REWARDS_PER_PAGE = 5;
+
     public static SmartInventory createWaveConfigMenu(String raidId, int waveIndex) {
+        return createWaveConfigMenu(raidId, waveIndex, 0, 0);
+    }
+
+    public static SmartInventory createWaveConfigMenu(String raidId, int waveIndex, int spawnPage, int rewardPage) {
         Raid raid = RaidManager.getRaidById(raidId);
         if (raid == null) return null;
         Wave wave = raid.getWaveByIndex(waveIndex);
         if (wave == null) return null;
 
+        // Asegurar páginas válidas
+        final int totalSpawnPages = Math.max(1, (int) Math.ceil((double) wave.getSpawnPoints().size() / SPAWNS_PER_PAGE));
+        final int totalRewardPages = Math.max(1, (int) Math.ceil((double) wave.getRewards().size() / REWARDS_PER_PAGE));
+        final int finalSpawnPage = Math.max(0, Math.min(spawnPage, totalSpawnPages - 1));
+        final int finalRewardPage = Math.max(0, Math.min(rewardPage, totalRewardPages - 1));
+
         return SmartInventory.builder()
-                .id("raid_wave_cfg_" + raidId + "_" + waveIndex)
+                .id("raid_wave_cfg_" + raidId + "_" + waveIndex + "_" + finalSpawnPage + "_" + finalRewardPage)
                 .provider(new InventoryProvider() {
                     @Override
                     public void init(Player player, InventoryContents contents) {
@@ -41,7 +54,7 @@ public class RaidWaveConfigMenu {
                         ItemMeta titleMeta = titleItem.getItemMeta();
                         titleMeta.setDisplayName(CC.translate("&6&lOleada " + wave.getWaveNumber()));
                         titleMeta.setLore(Arrays.asList(
-                                CC.translate("&7Raid: &f" + raid.getRaidName()),
+                                CC.translate("&7Raid: &f" + raid.getDisplayName()),
                                 CC.translate("&7Enemigos: &f" + wave.getTotalEnemies()),
                                 CC.translate("&7Spawns: &f" + wave.getSpawnPoints().size()),
                                 CC.translate("&7Recompensas: &f" + wave.getRewards().size())
@@ -54,14 +67,17 @@ public class RaidWaveConfigMenu {
                         ItemMeta spawnTitleMeta = spawnTitle.getItemMeta();
                         spawnTitleMeta.setDisplayName(CC.translate("&c&lPuntos de Spawn"));
                         spawnTitleMeta.setLore(Arrays.asList(
-                                CC.translate("&7Total: &f" + wave.getSpawnPoints().size())
+                                CC.translate("&7Total: &f" + wave.getSpawnPoints().size()),
+                                CC.translate("&7Página: &f" + (finalSpawnPage + 1) + "/" + totalSpawnPages)
                         ));
                         spawnTitle.setItemMeta(spawnTitleMeta);
                         contents.set(1, 1, ClickableItem.empty(spawnTitle));
 
-                        // Spawn points existentes
+                        // Spawn points existentes (paginados)
+                        int spawnStart = finalSpawnPage * SPAWNS_PER_PAGE;
+                        int spawnEnd = Math.min(spawnStart + SPAWNS_PER_PAGE, wave.getSpawnPoints().size());
                         int col = 2;
-                        for (int i = 0; i < Math.min(wave.getSpawnPoints().size(), 5); i++) {
+                        for (int i = spawnStart; i < spawnEnd; i++) {
                             SpawnPoint sp = wave.getSpawnPoints().get(i);
                             final int spIndex = i;
 
@@ -88,7 +104,7 @@ public class RaidWaveConfigMenu {
                                     RaidManager.updateRaid(raid);
                                     RaidStorageManager.saveRaid(raid);
                                     player.sendMessage(CC.translate("&c✗ Spawn point eliminado"));
-                                    createWaveConfigMenu(raidId, waveIndex).open(player);
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage, finalRewardPage).open(player);
                                 }
                             }));
 
@@ -112,19 +128,42 @@ public class RaidWaveConfigMenu {
                             RaidChatInputManager.startSpawnPointInput(player, raidId, waveIndex);
                         }));
 
+                        // Flechas de paginación para spawns
+                        if (finalSpawnPage > 0) {
+                            ItemStack prev = new ItemStack(Material.ARROW);
+                            ItemMeta prevMeta = prev.getItemMeta();
+                            prevMeta.setDisplayName(CC.translate("&e← Spawn anterior"));
+                            prev.setItemMeta(prevMeta);
+                            contents.set(1, 0, ClickableItem.of(prev, e ->
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage - 1, finalRewardPage).open(player)
+                            ));
+                        }
+                        if (spawnEnd < wave.getSpawnPoints().size()) {
+                            ItemStack next = new ItemStack(Material.ARROW);
+                            ItemMeta nextMeta = next.getItemMeta();
+                            nextMeta.setDisplayName(CC.translate("&eSpawn siguiente →"));
+                            next.setItemMeta(nextMeta);
+                            contents.set(1, 8, ClickableItem.of(next, e ->
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage + 1, finalRewardPage).open(player)
+                            ));
+                        }
+
                         // === SECCIÓN RECOMPENSAS ===
                         ItemStack rewardTitle = new ItemStack(Material.DIAMOND);
                         ItemMeta rewardTitleMeta = rewardTitle.getItemMeta();
                         rewardTitleMeta.setDisplayName(CC.translate("&b&lRecompensas"));
                         rewardTitleMeta.setLore(Arrays.asList(
-                                CC.translate("&7Total: &f" + wave.getRewards().size())
+                                CC.translate("&7Total: &f" + wave.getRewards().size()),
+                                CC.translate("&7Página: &f" + (finalRewardPage + 1) + "/" + totalRewardPages)
                         ));
                         rewardTitle.setItemMeta(rewardTitleMeta);
                         contents.set(2, 1, ClickableItem.empty(rewardTitle));
 
-                        // Recompensas existentes
+                        // Recompensas existentes (paginadas)
+                        int rewardStart = finalRewardPage * REWARDS_PER_PAGE;
+                        int rewardEnd = Math.min(rewardStart + REWARDS_PER_PAGE, wave.getRewards().size());
                         col = 2;
-                        for (int i = 0; i < Math.min(wave.getRewards().size(), 5); i++) {
+                        for (int i = rewardStart; i < rewardEnd; i++) {
                             WaveReward reward = wave.getRewards().get(i);
                             final int rwIndex = i;
 
@@ -147,7 +186,7 @@ public class RaidWaveConfigMenu {
                                     RaidManager.updateRaid(raid);
                                     RaidStorageManager.saveRaid(raid);
                                     player.sendMessage(CC.translate("&c✗ Recompensa eliminada"));
-                                    createWaveConfigMenu(raidId, waveIndex).open(player);
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage, finalRewardPage).open(player);
                                 }
                             }));
 
@@ -170,6 +209,26 @@ public class RaidWaveConfigMenu {
                             player.closeInventory();
                             RaidChatInputManager.startRewardInput(player, raidId, waveIndex);
                         }));
+
+                        // Flechas de paginación para recompensas
+                        if (finalRewardPage > 0) {
+                            ItemStack prev = new ItemStack(Material.ARROW);
+                            ItemMeta prevMeta = prev.getItemMeta();
+                            prevMeta.setDisplayName(CC.translate("&e← Recompensa anterior"));
+                            prev.setItemMeta(prevMeta);
+                            contents.set(2, 0, ClickableItem.of(prev, e ->
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage, finalRewardPage - 1).open(player)
+                            ));
+                        }
+                        if (rewardEnd < wave.getRewards().size()) {
+                            ItemStack next = new ItemStack(Material.ARROW);
+                            ItemMeta nextMeta = next.getItemMeta();
+                            nextMeta.setDisplayName(CC.translate("&eRecompensa siguiente →"));
+                            next.setItemMeta(nextMeta);
+                            contents.set(2, 8, ClickableItem.of(next, e ->
+                                    createWaveConfigMenu(raidId, waveIndex, finalSpawnPage, finalRewardPage + 1).open(player)
+                            ));
+                        }
 
                         // DESCRIPCIÓN DE OLEADA
                         ItemStack descButton = new ItemStack(Material.BOOK_AND_QUILL);

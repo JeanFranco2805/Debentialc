@@ -24,16 +24,24 @@ public class CooldownManager {
     // Estructura: player_uuid -> (raid_id -> cooldown_end_time)
     private static final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
+    private static String normalizeRaidId(String raidId) {
+        return raidId != null ? raidId.toLowerCase() : null;
+    }
+
     /**
      * Establece un cooldown para un jugador en una raid
      */
     public static void setCooldown(UUID playerId, String raidId, long durationSeconds) {
+        if (playerId == null || raidId == null) {
+            return;
+        }
         long endTime = System.currentTimeMillis() + (durationSeconds * 1000);
+        String key = normalizeRaidId(raidId);
 
         cooldowns.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>())
-                .put(raidId, endTime);
+                .put(key, endTime);
 
-        System.out.println("[Raids] Cooldown establecido: " + playerId + " - " + raidId +
+        System.out.println("[Raids] Cooldown establecido: " + playerId + " - " + key +
                 " - Duración: " + durationSeconds + "s");
 
         // Auto-guardar después de establecer cooldown
@@ -44,20 +52,25 @@ public class CooldownManager {
      * Verifica si un jugador tiene cooldown en una raid
      */
     public static boolean hasCooldown(UUID playerId, String raidId) {
+        if (playerId == null || raidId == null) {
+            return false;
+        }
         Map<String, Long> playerCooldowns = cooldowns.get(playerId);
         if (playerCooldowns == null) {
             return false;
         }
 
-        Long endTime = playerCooldowns.get(raidId);
-        if (endTime == null) {
+        String key = normalizeRaidId(raidId);
+        Object endTimeObj = playerCooldowns.get(key);
+        if (!(endTimeObj instanceof Number)) {
             return false;
         }
+        long endTime = ((Number) endTimeObj).longValue();
 
         // Verificar si el cooldown aún está activo
         if (System.currentTimeMillis() >= endTime) {
             // Cooldown expiró, removerlo
-            playerCooldowns.remove(raidId);
+            playerCooldowns.remove(key);
             saveCooldowns();
             return false;
         }
@@ -69,15 +82,20 @@ public class CooldownManager {
      * Obtiene los segundos restantes de un cooldown
      */
     public static long getCooldownRemaining(UUID playerId, String raidId) {
+        if (playerId == null || raidId == null) {
+            return 0;
+        }
         Map<String, Long> playerCooldowns = cooldowns.get(playerId);
         if (playerCooldowns == null) {
             return 0;
         }
 
-        Long endTime = playerCooldowns.get(raidId);
-        if (endTime == null) {
+        String key = normalizeRaidId(raidId);
+        Object endTimeObj = playerCooldowns.get(key);
+        if (!(endTimeObj instanceof Number)) {
             return 0;
         }
+        long endTime = ((Number) endTimeObj).longValue();
 
         long remaining = (endTime - System.currentTimeMillis()) / 1000;
         return Math.max(0, remaining);
@@ -110,9 +128,12 @@ public class CooldownManager {
      * Limpia un cooldown específico
      */
     public static void clearCooldown(UUID playerId, String raidId) {
+        if (playerId == null || raidId == null) {
+            return;
+        }
         Map<String, Long> playerCooldowns = cooldowns.get(playerId);
         if (playerCooldowns != null) {
-            playerCooldowns.remove(raidId);
+            playerCooldowns.remove(normalizeRaidId(raidId));
             saveCooldowns();
             System.out.println("[Raids] Cooldown removido: " + playerId + " - " + raidId);
         }
@@ -149,8 +170,14 @@ public class CooldownManager {
         }
 
         // Crear una copia y remover los expirados
-        Map<String, Long> active = new HashMap<>(playerCooldowns);
-        active.entrySet().removeIf(entry -> System.currentTimeMillis() >= entry.getValue());
+        Map<String, Long> active = new HashMap<>();
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, Long> entry : playerCooldowns.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Number && now < ((Number) value).longValue()) {
+                active.put(entry.getKey(), ((Number) value).longValue());
+            }
+        }
 
         return active;
     }

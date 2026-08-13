@@ -37,7 +37,7 @@ public class RaidDeleteConfirmMenu {
                         warnMeta.setDisplayName(CC.translate("&c&l¿Eliminar Raid?"));
                         warnMeta.setLore(Arrays.asList(
                                 CC.translate("&7Esta acción no puede deshacerse"),
-                                CC.translate("&7La raid &f" + raid.getRaidName() + " &7será"),
+                                CC.translate("&7La raid &f" + raid.getDisplayName() + " &7será"),
                                 CC.translate("&7eliminada permanentemente"),
                                 CC.translate("&7Oleadas: &f" + raid.getTotalWaves())
                         ));
@@ -53,7 +53,7 @@ public class RaidDeleteConfirmMenu {
                             RaidManager.deleteRaid(raidId);
                             RaidStorageManager.deleteRaidFiles(raidId);
                             RaidStorageManager.saveAllRaids();
-                            player.sendMessage(CC.translate("&a✓ Raid eliminada: " + raid.getRaidName()));
+                            player.sendMessage(CC.translate("&a✓ Raid eliminada: " + raid.getDisplayName()));
                             RaidListMenu.createRaidListMenu(1).open(player);
                         }));
 

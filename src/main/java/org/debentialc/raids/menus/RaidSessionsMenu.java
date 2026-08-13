@@ -57,7 +57,7 @@ public class RaidSessionsMenu {
                             for (RaidSession session : sessions) {
                                 ItemStack sessionItem = new ItemStack(Material.EYE_OF_ENDER);
                                 ItemMeta sessionMeta = sessionItem.getItemMeta();
-                                sessionMeta.setDisplayName(CC.translate("&6&l" + session.getRaid().getRaidName()));
+                                sessionMeta.setDisplayName(CC.translate("&6&l" + session.getRaid().getDisplayName()));
 
                                 List<String> lore = new ArrayList<>();
                                 lore.add(CC.translate("&7Sesión: &f" + session.getSessionId()));

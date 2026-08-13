@@ -124,6 +124,16 @@ public class ItemEditListener implements Listener {
             return;
         }
 
+        if (ItemExpirationInputManager.isInputtingExpiration(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                ItemExpirationInputManager.cancelExpirationInput(player);
+            } else {
+                ItemExpirationInputManager.processExpirationInput(player, message);
+            }
+            return;
+        }
+
         if (org.debentialc.customitems.tools.scripts.ScriptInputManager.isInputtingScript(player)) {
             event.setCancelled(true);
             if (message.equalsIgnoreCase("cancelar")) {
@@ -170,6 +180,16 @@ public class ItemEditListener implements Listener {
                 CategoryInputManager.cancelCategoryChange(player);
             } else {
                 CategoryInputManager.processCategoryInput(player, message);
+            }
+            return;
+        }
+
+        if (ArmorExpirationInputManager.isInputtingExpiration(player)) {
+            event.setCancelled(true);
+            if (message.equalsIgnoreCase("cancelar")) {
+                ArmorExpirationInputManager.cancelExpirationInput(player);
+            } else {
+                ArmorExpirationInputManager.processExpirationInput(player, message);
             }
             return;
         }

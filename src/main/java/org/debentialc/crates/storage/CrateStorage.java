@@ -95,6 +95,7 @@ public class CrateStorage {
         for (CrateItem item : crate.getItems().values()) {
             crateConfig.set(path + ".items." + item.getId() + ".rarity", item.getRarityId());
             crateConfig.set(path + ".items." + item.getId() + ".item", item.getItemBase64());
+            crateConfig.set(path + ".items." + item.getId() + ".chance", item.getChance());
         }
         save();
     }
@@ -134,7 +135,8 @@ public class CrateStorage {
                     String itemPath = path + ".items." + itemId;
                     String rarityId = crateConfig.getString(itemPath + ".rarity", "COMMON");
                     String itemBase64 = crateConfig.getString(itemPath + ".item");
-                    crate.getItems().put(itemId.toLowerCase(), new CrateItem(itemId.toLowerCase(), rarityId.toUpperCase(), itemBase64));
+                    double chance = crateConfig.getDouble(itemPath + ".chance", 0.0);
+                    crate.getItems().put(itemId.toLowerCase(), new CrateItem(itemId.toLowerCase(), rarityId.toUpperCase(), itemBase64, chance));
                 }
             }
             crates.put(id.toLowerCase(), crate);

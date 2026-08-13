@@ -1,0 +1,55 @@
+# ============================================================
+# Scoreboard propio estilo Featherboard
+# Editable en caliente con /debentialc scoreboard reload
+# ============================================================
+
+enabled: true
+
+# Ticks entre cada actualización del scoreboard (20 ticks = 1 segundo)
+update-interval: 20
+
+# Título del scoreboard
+# Tipos disponibles: static, frames, scroll
+title:
+  type: frames
+  interval: 10
+  text: "&6&lDebentialc"
+  frames:
+    - "&6&lDebentialc"
+    - "&e&lDebentialc"
+    - "&6&lDebentialc"
+    - "&c&lDebentialc"
+
+# Líneas del scoreboard (de arriba hacia abajo)
+# Puedes usar placeholders propios del plugin:
+#   %debentialc_level%, %debentialc_tps%, %debentialc_race%,
+#   %debentialc_category%, %debentialc_online%,
+#   %debentialc_booster_global_multiplier%, %debentialc_booster_global_remaining%,
+#   %debentialc_booster_personal_multiplier%, %debentialc_booster_personal_remaining%
+lines:
+  - "&7"
+  - "&fJugador: &a%player_name%"
+  - "&7Raza: &f%debentialc_race%"
+  - "&7Nivel: &f%debentialc_level%"
+  - "&7TP: &f%debentialc_tps%"
+  - "&7"
+  - "&fBoosters:"
+  - " &7Global: &f%debentialc_booster_global_percentage%"
+  - " &7Personal: &f%debentialc_booster_personal_percentage%"
+  - "&7"
+  - animation:
+      type: scroll
+      interval: 3
+      text: "&eBienvenido al servidor &6Debentialc &e- ¡Diviértete!"
+      width: 26
+  - "&7Online: &f%debentialc_online%"
+  - "&7"
+
+# Ejemplo de línea con animación por frames:
+# - animation:
+#     type: frames
+#     interval: 20
+#     frames:
+#       - "&a>> &fEvento activo"
+#       - "&b>> &fEvento activo"
+#       - "&c>> &fEvento activo"

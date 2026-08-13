@@ -235,6 +235,10 @@ public class CrateCommand extends BaseCommand {
                 if (command.length() > 4) {
                     try {
                         weight = Double.parseDouble(command.getArgs(4));
+                        if (weight <= 0) {
+                            command.getSender().sendMessage(CC.translate("&c✗ El peso debe ser mayor que 0."));
+                            return;
+                        }
                     } catch (NumberFormatException e) {
                         command.getSender().sendMessage(CC.translate("&c✗ Peso inválido."));
                         return;
@@ -243,9 +247,65 @@ public class CrateCommand extends BaseCommand {
                 String color = command.length() > 5 ? command.getArgs(5) : "&f";
                 boolean announce = command.length() > 6 && (command.getArgs(6).equalsIgnoreCase("true") || command.getArgs(6).equalsIgnoreCase("yes") || command.getArgs(6).equalsIgnoreCase("si"));
                 if (CrateManager.getInstance().createRarity(id, CC.translate(display), color, weight, announce)) {
-                    command.getSender().sendMessage(CC.translate("&a✓ Rareza &f" + id + " &acreada."));
+                    command.getSender().sendMessage(CC.translate("&a✓ Rareza &f" + id + " &acreada con peso &f" + weight + "&a."));
                 } else {
                     command.getSender().sendMessage(CC.translate("&c✗ La rareza &f" + id + " &cya existe."));
+                }
+                break;
+            case "edit":
+                if (command.length() < 3) {
+                    command.getSender().sendMessage(CC.translate("&cUso: /crate rarity edit <id> [display] [peso] [color] [announce]"));
+                    return;
+                }
+                String editId = command.getArgs(2).toUpperCase();
+                String editDisplay = command.length() > 3 ? command.getArgs(3) : null;
+                Double editWeight = null;
+                if (command.length() > 4) {
+                    try {
+                        editWeight = Double.parseDouble(command.getArgs(4));
+                        if (editWeight <= 0) {
+                            command.getSender().sendMessage(CC.translate("&c✗ El peso debe ser mayor que 0."));
+                            return;
+                        }
+                    } catch (NumberFormatException e) {
+                        command.getSender().sendMessage(CC.translate("&c✗ Peso inválido."));
+                        return;
+                    }
+                }
+                String editColor = command.length() > 5 ? command.getArgs(5) : null;
+                Boolean editAnnounce = null;
+                if (command.length() > 6) {
+                    editAnnounce = command.getArgs(6).equalsIgnoreCase("true") || command.getArgs(6).equalsIgnoreCase("yes") || command.getArgs(6).equalsIgnoreCase("si");
+                }
+                if (CrateManager.getInstance().updateRarity(editId, editDisplay != null ? CC.translate(editDisplay) : null, editWeight, editColor, editAnnounce)) {
+                    command.getSender().sendMessage(CC.translate("&a✓ Rareza &f" + editId + " &aactualizada."));
+                } else {
+                    command.getSender().sendMessage(CC.translate("&c✗ La rareza &f" + editId + " &cno existe."));
+                }
+                break;
+            case "setweight":
+            case "setprob":
+            case "prob":
+                if (command.length() < 4) {
+                    command.getSender().sendMessage(CC.translate("&cUso: /crate rarity setweight <id> <peso>"));
+                    return;
+                }
+                String weightId = command.getArgs(2).toUpperCase();
+                double newWeight;
+                try {
+                    newWeight = Double.parseDouble(command.getArgs(3));
+                    if (newWeight <= 0) {
+                        command.getSender().sendMessage(CC.translate("&c✗ El peso debe ser mayor que 0."));
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    command.getSender().sendMessage(CC.translate("&c✗ Peso inválido."));
+                    return;
+                }
+                if (CrateManager.getInstance().setRarityWeight(weightId, newWeight)) {
+                    command.getSender().sendMessage(CC.translate("&a✓ Peso de &f" + weightId + " &aactualizado a &f" + newWeight + "&a."));
+                } else {
+                    command.getSender().sendMessage(CC.translate("&c✗ La rareza &f" + weightId + " &cno existe."));
                 }
                 break;
             case "delete":
@@ -268,7 +328,7 @@ public class CrateCommand extends BaseCommand {
                     command.getSender().sendMessage(CC.translate("&7No hay rarezas registradas."));
                 } else {
                     for (CrateRarity rarity : rarities.values()) {
-                        command.getSender().sendMessage(CC.translate("&7  &f" + rarity.getId() + " &7- " + rarity.getDisplayName() + " &7(peso: " + rarity.getWeight() + ")"));
+                        command.getSender().sendMessage(CC.translate("&7  &f" + rarity.getId() + " &7- " + rarity.getColor() + rarity.getDisplayName() + " &7(peso: " + rarity.getWeight() + ", anunciar: " + (rarity.isAnnounce() ? "sí" : "no") + ")"));
                     }
                 }
                 command.getSender().sendMessage(CC.translate("&8&m---------------------------------------"));
@@ -294,7 +354,7 @@ public class CrateCommand extends BaseCommand {
         sender.sendMessage(CC.translate("&e/crate key <crate> [jugador] [cantidad]"));
         sender.sendMessage(CC.translate("&e/crate list"));
         sender.sendMessage(CC.translate("&e/crate info <id>"));
-        sender.sendMessage(CC.translate("&e/crate rarity <create|delete|list>"));
+        sender.sendMessage(CC.translate("&e/crate rarity <create|edit|setweight|delete|list>"));
         sender.sendMessage(CC.translate("&e/crate menu"));
         sender.sendMessage(CC.translate("&e/crate reload"));
         sender.sendMessage(CC.translate("&8&m---------------------------------------"));
@@ -305,6 +365,8 @@ public class CrateCommand extends BaseCommand {
         sender.sendMessage(CC.translate("&3Rarezas - Ayuda"));
         sender.sendMessage(CC.translate("&8&m---------------------------------------"));
         sender.sendMessage(CC.translate("&e/crate rarity create <id> [display] [peso] [color] [announce]"));
+        sender.sendMessage(CC.translate("&e/crate rarity edit <id> [display] [peso] [color] [announce]"));
+        sender.sendMessage(CC.translate("&e/crate rarity setweight <id> <peso>"));
         sender.sendMessage(CC.translate("&e/crate rarity delete <id>"));
         sender.sendMessage(CC.translate("&e/crate rarity list"));
         sender.sendMessage(CC.translate("&8&m---------------------------------------"));

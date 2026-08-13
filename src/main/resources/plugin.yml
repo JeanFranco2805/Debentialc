@@ -3,4 +3,5 @@ version: 1.1.0
 name: Debentialc
 author: DelawareX
 depend: [Essentials, MassiveCore, Factions]
-softdepend: [WorldGuard]
+softdepend: [WorldGuard, LuckPerms, CustomNPCs]
+

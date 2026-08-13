@@ -8,6 +8,7 @@ import org.debentialc.customitems.tools.ci.CustomArmor;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
 import org.debentialc.customitems.commands.RegisterItem;
 import org.debentialc.customitems.tools.durability.CustomDurabilityManager;
+import org.debentialc.customitems.tools.nbt.CustomItemTagging;
 import org.debentialc.customitems.tools.nbt.NbtHandler;
 
 import java.util.HashMap;
@@ -151,6 +152,10 @@ public class ArmorEditManager {
 
         if (customArmor.getMaxDurability() > 0) {
             CustomDurabilityManager.setCustomMaxDurability(itemStack, customArmor.getMaxDurability());
+        }
+
+        if (customArmor.isOwnerOnly()) {
+            itemStack = CustomItemTagging.applyOwner(itemStack, player);
         }
 
         if (player.getInventory().firstEmpty() == -1) {

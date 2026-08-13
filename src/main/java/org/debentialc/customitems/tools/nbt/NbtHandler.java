@@ -10,9 +10,14 @@ public class NbtHandler {
     private NBTTagCompound compound;
 
     public NbtHandler(ItemStack item) {
+        if (item == null || item.getTypeId() == 0) {
+            this.item = null;
+            this.compound = null;
+            return;
+        }
         net.minecraft.server.v1_7_R4.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
         this.item = nmsStack;
-        if (nmsStack.getTag() != null) {
+        if (nmsStack != null && nmsStack.getTag() != null) {
             this.compound = nmsStack.getTag();
         } else {
             this.compound = null;
@@ -32,6 +37,7 @@ public class NbtHandler {
     }
 
     public void setCompoundFromString(String comp) {
+        if (item == null) return;
         try {
             NBTTagCompound nbt = getCompoundFromString(comp);
             item.setTag(nbt);
@@ -41,12 +47,18 @@ public class NbtHandler {
         }
     }
 
+    private void applyTag() {
+        if (item != null) {
+            item.setTag(compound);
+        }
+    }
+
     public void setString(String key, String value) {
         if (compound == null) {
             compound = new NBTTagCompound();
         }
         compound.setString(key, value);
-        item.setTag(compound);
+        applyTag();
     }
 
     public void setInteger(String key, int value) {
@@ -54,7 +66,20 @@ public class NbtHandler {
             compound = new NBTTagCompound();
         }
         compound.setInt(key, value);
-        item.setTag(compound);
+        applyTag();
+    }
+
+    public void setLong(String key, long value) {
+        if (compound == null) {
+            compound = new NBTTagCompound();
+        }
+        compound.setLong(key, value);
+        applyTag();
+    }
+
+    public long getLong(String key) {
+        if (compound == null) return 0L;
+        return compound.getLong(key);
     }
 
     public void setBoolean(String key, boolean value) {
@@ -62,7 +87,7 @@ public class NbtHandler {
             compound = new NBTTagCompound();
         }
         compound.setBoolean(key, value);
-        item.setTag(compound);
+        applyTag();
     }
 
     public void setShort(String key, short value) {
@@ -70,7 +95,7 @@ public class NbtHandler {
             compound = new NBTTagCompound();
         }
         compound.setShort(key, value);
-        item.setTag(compound);
+        applyTag();
     }
 
     public void setCompound(String key, NBTTagCompound compound) {
@@ -78,10 +103,11 @@ public class NbtHandler {
             this.compound = new NBTTagCompound();
         }
         this.compound.set(key, compound);
-        this.item.setTag(this.compound);
+        applyTag();
     }
 
     public void changeDamage(int damage) {
+        if (item == null) return;
         if (this.compound == null) {
             this.compound = new NBTTagCompound();
         }
@@ -96,7 +122,7 @@ public class NbtHandler {
         damageTag.set("Slot", new NBTTagString("mainhand"));
         modifiers.add(damageTag);
         this.compound.set("AttributeModifiers", modifiers);
-        this.item.setTag(this.compound);
+        applyTag();
     }
 
     public String getString(String key) {
@@ -120,6 +146,7 @@ public class NbtHandler {
     }
 
     public ItemStack getItemStack() {
+        if (item == null) return null;
         return CraftItemStack.asBukkitCopy(item);
     }
 

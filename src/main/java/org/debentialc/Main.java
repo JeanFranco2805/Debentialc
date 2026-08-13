@@ -31,7 +31,13 @@ import org.debentialc.claims.storage.TerrainStorage;
 import org.debentialc.customitems.tools.ci.CustomManager;
 import org.debentialc.customitems.tools.fragments.FragmentBonusIntegration;
 import org.debentialc.customitems.tools.storage.CustomArmorStorage;
+import org.debentialc.cnpclogger.CNPCLogger;
 import org.debentialc.raids.events.NPCDeathListener;
+import org.debentialc.mascotas.managers.PetManager;
+import org.debentialc.mascotas.managers.PetStorageManager;
+import org.debentialc.raids.managers.CooldownManager;
+import org.debentialc.raids.managers.RaidCategoryManager;
+import org.debentialc.raids.managers.RaidConfig;
 import org.debentialc.raids.managers.RaidStorageManager;
 import org.debentialc.factions.FactionsModule;
 import org.debentialc.rebirths.RebirthModule;
@@ -43,8 +49,10 @@ import org.debentialc.service.CC;
 import org.debentialc.service.ClassesRegistration;
 import org.debentialc.service.ServerUtil;
 import org.debentialc.service.commands.CommandFramework;
+import org.debentialc.cinematics.CinematicModule;
 import org.debentialc.scoreboard.ScoreboardModule;
-import org.debentialc.swords.SwordsModule;
+import org.debentialc.magicitems.MagicItemsModule;
+import org.debentialc.mines.MinesModule;
 import org.debentialc.trainings.TrainingModule;
 import org.debentialc.trainings.managers.TrainingManager;
 
@@ -81,27 +89,40 @@ public class Main extends JavaPlugin {
 
         classesRegistration.loadCommands("org.debentialc.customitems.commands");
         classesRegistration.loadCommands("org.debentialc.raids.commands");
+        classesRegistration.loadCommands("org.debentialc.mascotas.commands");
         classesRegistration.loadCommands("org.debentialc.boosters.commands");
         classesRegistration.loadCommands("org.debentialc.claims.commands");
         classesRegistration.loadCommands("org.debentialc.rebirths.commands");
         classesRegistration.loadCommands("org.debentialc.trainings.commands");
         classesRegistration.loadCommands("org.debentialc.crates.commands");
         classesRegistration.loadCommands("org.debentialc.utilities.commands");
+        classesRegistration.loadCommands("org.debentialc.mines.commands");
+        classesRegistration.loadCommands("org.debentialc.formas.commands");
+
+        commandFramework.overrideCommand("kit", "kits");
+        commandFramework.overrideCommand("raidadmin");
 
         classesRegistration.loadListeners("org.debentialc.customitems.events");
+        classesRegistration.loadListeners("org.debentialc.mines.listeners");
         classesRegistration.loadListeners("org.debentialc.boosters.events");
         classesRegistration.loadListeners("org.debentialc.raids.events");
+        classesRegistration.loadListeners("org.debentialc.mascotas.events");
         classesRegistration.loadListeners("org.debentialc.claims.events");
         classesRegistration.loadListeners("org.debentialc.rebirths.events");
         classesRegistration.loadListeners("org.debentialc.trainings.events");
         classesRegistration.loadListeners("org.debentialc.crates.events");
+        classesRegistration.loadListeners("org.debentialc.crates.managers");
+        classesRegistration.loadListeners("org.debentialc.crates.menus");
+        classesRegistration.loadListeners("org.debentialc.formas.events");
 
         CustomManager.armorTask();
         effectsTask();
         CustomArmorStorage.getInstance().initialLoad();
+        org.debentialc.customitems.kits.KitStorage.getInstance().loadAll();
         loadAllConfigs();
         armorTask();
         startTerrainEffectsTask();
+        org.debentialc.customitems.tools.inventory.ItemExpirationScanner.start();
 
         BoosterModule.initialize(this);
         PlaceholderModule.initialize(this);
@@ -109,15 +130,27 @@ public class Main extends JavaPlugin {
         RebirthModule.initialize(this);
         TrainingModule.initialize(this);
         ScoreboardModule.initialize(this);
+        CinematicModule.initialize(this);
         FactionsModule.initialize();
         WorldGuardModule.initialize();
-        SwordsModule.initialize();
+        MagicItemsModule.initialize();
+        MinesModule.initialize(this);
 
         //Factions.get ( ).getOuterCmdFactions ( ).addSubCommand ( new CmdFactionZenkais ( ) );
         registerCustomNPCsEvents();
 
+        RaidConfig.load();
+        RaidCategoryManager.load();
         RaidStorageManager.loadAllRaids();
+        CooldownManager.loadCooldowns();
+        PetStorageManager.loadAllPets();
+        PetStorageManager.loadPlayerPets();
+        org.debentialc.formas.managers.FormasManager.load();
+        org.debentialc.formas.managers.FormasPlayerManager.load();
+        org.debentialc.formas.managers.FormasConfigManager.load();
         System.out.println("[Raids] Sistema de raids inicializado");
+        System.out.println("[Mascotas] Sistema de mascotas inicializado");
+        System.out.println("[Formas] Sistema de formas inicializado");
     }
 
     /**
@@ -174,9 +207,12 @@ public class Main extends JavaPlugin {
                     return;
                 }
 
-                api.events().register(new org.debentialc.raids.events.NPCDeathListener());
+            api.events().register(new org.debentialc.raids.events.NPCDeathListener());
 
-                getLogger().info("[Raids] NPCDeathListener registrado correctamente en CustomNPCs");
+            getServer().getPluginManager().registerEvents(new CNPCLogger(), this);
+            getLogger().info("[CNPCLogger] Logger de CustomNPCs registrado");
+
+            getLogger().info("[Raids] NPCDeathListener registrado correctamente en CustomNPCs");
 
             } catch (Exception e) {
                 getLogger().severe("[Raids] Error al registrar NPCDeathListener:");
@@ -197,10 +233,99 @@ public class Main extends JavaPlugin {
         };
         runnable.runTaskTimer(Main.instance, 1L, 1L);
     }
-
+    public static void callDamageEvent(INpcEvent.DamagedEvent event){
+        NPCDeathListener npcDeathListener = new NPCDeathListener();
+        npcDeathListener.onNpcDamage(event);
+    }
     public static void callDeathEvent(INpcEvent.DiedEvent event) {
         NPCDeathListener npcDeathListener = new NPCDeathListener();
         npcDeathListener.onNpcDie(event);
+    }
+
+    /**
+     * Detecta si una entidad es una mascota asignada a un jugador.
+     *
+     * @param playerName Nombre del jugador
+     * @param entityId   ID de la entidad (NPC)
+     * @return true si la mascota pertenece al jugador
+     */
+    public static boolean isPlayerPet(String playerName, int entityId) {
+        return PetManager.isPlayerPet(playerName, entityId);
+    }
+
+    /**
+     * Verifica si un jugador tiene spawneada una mascota por su entityId.
+     *
+     * @param playerName Nombre del jugador
+     * @param entityId   ID de la entidad (NPC)
+     * @return true si la mascota está spawneada y pertenece al jugador
+     */
+    public static boolean hasPlayerSpawnedPet(String playerName, int entityId) {
+        return PetManager.hasPlayerSpawnedPet(playerName, entityId);
+    }
+
+    /**
+     * Devuelve el nombre de la mascota de un jugador dado su entityId.
+     *
+     * @param playerName Nombre del jugador
+     * @param entityId   ID de la entidad (NPC)
+     * @return nombre de la mascota, o null si no pertenece al jugador
+     */
+    public static String getPlayerPetName(String playerName, int entityId) {
+        return PetManager.getPlayerPetName(playerName, entityId);
+    }
+
+    /**
+     * Verifica si un jugador tiene una mascota asignada por su nombre.
+     *
+     * @param playerName Nombre del jugador
+     * @param petName    Nombre de la mascota registrada
+     * @return true si el jugador tiene esa mascota asignada
+     */
+    public static boolean hasPlayerPet(String playerName, String petName) {
+        return PetManager.hasPlayerPet(playerName, petName);
+    }
+
+    /**
+     * Verifica si un jugador tiene una mascota spawneada actualmente por su nombre.
+     *
+     * @param playerName Nombre del jugador
+     * @param petName    Nombre de la mascota registrada
+     * @return true si la mascota está spawneada y pertenece al jugador
+     */
+    public static boolean hasPlayerSpawnedPet(String playerName, String petName) {
+        return PetManager.hasPlayerSpawnedPet(playerName, petName);
+    }
+
+    /**
+     * Devuelve el entityId de una mascota spawneada de un jugador.
+     *
+     * @param playerName Nombre del jugador
+     * @param petName    Nombre de la mascota registrada
+     * @return entityId o -1 si no está spawneada/no la tiene
+     */
+    public static int getPlayerPetEntityId(String playerName, String petName) {
+        return PetManager.getPlayerPetEntityId(playerName, petName);
+    }
+
+    /**
+     * Devuelve el nombre del dueño de una mascota a partir de su entityId.
+     *
+     * @param entityId ID de la entidad (NPC)
+     * @return nombre del jugador propietario, o null si no es una mascota registrada
+     */
+    public static String getPetOwner(int entityId) {
+        return PetManager.getPetOwner(entityId);
+    }
+
+    /**
+     * Devuelve el nombre del dueño de una mascota a partir de su nombre interno.
+     *
+     * @param petName Nombre de la mascota asignada
+     * @return nombre del jugador propietario, o null si no es una mascota registrada
+     */
+    public static String getPetOwner(String petName) {
+        return PetManager.getPetOwner(petName);
     }
 
     /**
@@ -256,9 +381,16 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        RaidStorageManager.saveAllRaids();
+        CooldownManager.saveCooldowns();
+        PetStorageManager.saveAllPets();
+        PetStorageManager.savePlayerPets();
+        MagicItemsModule.shutdown();
         BoosterModule.shutdown();
         PlaceholderModule.shutdown();
         ScoreboardModule.shutdown();
+        CinematicModule.shutdown();
+        MinesModule.shutdown();
     }
 
     public static void exampleUsage() {
