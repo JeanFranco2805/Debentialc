@@ -11,13 +11,13 @@
  * para que no salgan como '?' en servidores sin UTF-8.
  *
  * Que hace al dar clic derecho:
- *   - Barrido de 360 grados que empuja y dana a los NPCs de CustomNPCs cercanos que sean
- *     enemigos del dueno: los de faccion agresiva con el, y los de faccion neutral
- *     que lo esten atacando. Los amistosos y los neutrales tranquilos no se tocan.
+ *   - Barrido de 360 grados que empuja y dana a los NPCs de CustomNPCs cercanos cuya
+ *     faccion sea agresiva o neutral con el dueno, esten peleando con el o no.
+ *     Los amistosos no se tocan.
  *   - Dano por NPC: 20% del ultimo golpe cuerpo a cuerpo que el dueno le dio a un NPC.
  *     DBC no expone un "dano de melee" que se pueda leer, asi que se mide de los golpes
- *     reales (incluye forma, release, kaioken, items...). Despues de cada reinicio hay
- *     que golpear un NPC una vez antes de usar el baculo.
+ *     reales (incluye forma, release, kaioken, items...). El ultimo golpe usado queda
+ *     guardado en el baculo, asi que solo hay que pegarle a un NPC antes del primer uso.
  *   - 10 usos por baculo; al gastarlos se rompe. Un clic sin enemigos cerca no gasta uso.
  *   - Solo responde a su dueno: el que recibio el item con /ci give (ownerOnly: true).
  *
@@ -97,17 +97,11 @@ function handleNpc(entidad) {
     return null;
 }
 
-// Agresivo con el dueno segun su faccion, o neutral y atacandolo ahora mismo.
+// Faccion agresiva o neutral con el dueno, este o no peleando con el.
 function esEnemigo(npc, yo) {
     var faccion = npc.faction;
     if (faccion == null) return false;
-    if (faccion.isAggressiveToPlayer(yo)) return true;
-    if (!faccion.isNeutralToPlayer(yo)) return false;
-
-    var scriptNpc = npc.wrappedNPC;
-    if (scriptNpc == null) return false;
-    var objetivo = scriptNpc.getAttackTarget();
-    return objetivo != null && objetivo.getMCEntity().equals(yo);
+    return faccion.isAggressiveToPlayer(yo) || faccion.isNeutralToPlayer(yo);
 }
 
 function numero(valor) {
@@ -181,9 +175,29 @@ function leerUsos(nbt) {
     return nbt.hasKey(CONFIG.CLAVE_USOS) ? nbt.getInteger(CONFIG.CLAVE_USOS) : 0;
 }
 
-function guardarUsos(nbt, usados) {
+// Cambia el item del slot en el tick siguiente. Si se cambia en este mismo tick, los items
+// que tienen accion al clic derecho (espadas como el Baston Magico, arcos...) lo pisan:
+// despues del evento el servidor vuelve a poner en la mano el item que habia antes.
+function reemplazarDespues(nuevo) {
+    var inventario = player.getInventory();
+    var slot = inventario.getHeldItemSlot();
+    var tipo = item.getTypeId();
+    var plugin = server.getPluginManager().getPlugin("Debentialc");
+    server.getScheduler().runTaskLater(plugin, function () {
+        var actual = inventario.getItem(slot);
+        if (actual == null || actual.getTypeId() !== tipo) {
+            api.warn("[baculo_sagrado] " + player.getName() + " movio el baculo antes de guardar los usos");
+            return;
+        }
+        inventario.setItem(slot, nuevo);
+        player.updateInventory();
+    }, 1);
+}
+
+function guardarUsos(nbt, usados, golpe) {
     nbt.setInteger(CONFIG.CLAVE_USOS, usados);
-    player.setItemInHand(nbt.getItemStack());
+    nbt.setLong(CONFIG.CLAVE_GOLPE, Math.round(golpe));
+    reemplazarDespues(nbt.getItemStack());
 }
 
 function romper(nbt) {
@@ -191,9 +205,9 @@ function romper(nbt) {
         nbt.setInteger(CONFIG.CLAVE_USOS, 0);
         var resto = nbt.getItemStack();
         resto.setAmount(item.getAmount() - 1);
-        player.setItemInHand(resto);
+        reemplazarDespues(resto);
     } else {
-        player.setItemInHand(null);
+        reemplazarDespues(null);
     }
     api.playSound(player, "ITEM_BREAK", 1.0, 1.0);
     api.sendMessage(player, "&c\u2726 El B\u00e1culo Sagrado se rompi\u00f3 tras " + CONFIG.USOS + " usos.");
@@ -234,9 +248,11 @@ function main() {
         return;
     }
 
+    // Golpe medido en esta sesion; si no hay (p. ej. tras un reinicio), el guardado en el baculo.
     var golpe = numero(api.getPlayerData(player, CONFIG.CLAVE_GOLPE));
-    if (golpe == null) {
-        api.sendMessage(player, "&7Golpea primero a un NPC: el b\u00e1culo usa tu golpe para calcular su da\u00f1o. &8(no se gast\u00f3 ning\u00fan uso)");
+    if (golpe == null && nbt.hasKey(CONFIG.CLAVE_GOLPE)) golpe = nbt.getLong(CONFIG.CLAVE_GOLPE);
+    if (golpe == null || golpe <= 0) {
+        api.sendMessage(player, "&7Golpea una vez a un NPC antes del primer uso: el b\u00e1culo usa tu golpe para calcular su da\u00f1o. &8(no se gast\u00f3 ning\u00fan uso)");
         return;
     }
     var danoPorNpc = golpe * CONFIG.PORCENTAJE_DANO;
@@ -255,7 +271,7 @@ function main() {
     if (usados >= CONFIG.USOS) {
         romper(nbt);
     } else {
-        guardarUsos(nbt, usados);
+        guardarUsos(nbt, usados, golpe);
         api.sendMessage(player, "&7Usos restantes: &e" + (CONFIG.USOS - usados) + "&7/" + CONFIG.USOS);
     }
     player.updateInventory();
