@@ -44,8 +44,9 @@ var TAGGING_CLASS = "org.debentialc.customitems.tools.nbt.CustomItemTagging";
 var NBT_CLASS = "org.debentialc.customitems.tools.nbt.NbtHandler";
 var FUENTE_NPC_CLASS = "noppes.npcs.NpcDamageSource";
 var FUENTE_SCRIPT_CLASS = "noppes.npcs.scripted.ScriptDamageSource";
-var EVENTO_DANO_CLASS = "org.bukkit.event.entity.EntityDamageByEntityEvent";
-var CAUSA_DANO_CLASS = "org.bukkit.event.entity.EntityDamageEvent$DamageCause";
+var RAID_NPCS_CLASS = "org.debentialc.raids.managers.NPCSpawnManager";
+var RAID_SESIONES_CLASS = "org.debentialc.raids.managers.RaidSessionManager";
+var VERSION = "2026-09-28 dano-directo-2";
 var EFECTO_CLASS = "org.bukkit.EntityEffect";
 var TIPO_DANO = "baculo_sagrado";
 var NPC_BASE_CLASS = "noppes.npcs.entity.EntityNPCInterface";
@@ -118,6 +119,7 @@ function numero(valor) {
 // jugadores contra NPCs. Ignora el dano del propio barrido para no medirse a si mismo.
 function registrarMedidor() {
     if (api.isEventRegistered(EVENTO_DANO)) return;
+    api.log("[baculo_sagrado] Script cargado, versi\u00f3n " + VERSION);
     api.on(EVENTO_DANO, function (evento) {
         if (evento.isCancelled()) return;
         var atacante = evento.getDamager();
@@ -152,25 +154,28 @@ function fuenteDelDueno(yo) {
     }
 }
 
-// Pregunta a los plugins (raids, WorldGuard...) si el dueno puede danar a este NPC, con el
-// mismo evento que genera un golpe normal. Devuelve el dano permitido o -1 si lo cancelan.
-function danoPermitido(entidad, cantidad) {
+function enteroJava(n) {
+    var entero = api.getClass().getClassLoader().loadClass("java.lang.Integer");
+    return buscarMetodo(entero, "valueOf", ["java.lang.String"]).invoke(null, String(n));
+}
+
+// Misma regla que el sistema de raids del plugin: a un NPC de raid solo lo danan los
+// jugadores activos de esa raid. No se lanza ningun evento de dano a nombre del dueno:
+// otros plugins de DBC cambian ese dano por el golpe completo del jugador.
+function permitidoPorRaids(entidad) {
     try {
         var cargador = api.getClass().getClassLoader();
-        var causa = cargador.loadClass(CAUSA_DANO_CLASS).getField("ENTITY_ATTACK").get(null);
-        var constructores = cargador.loadClass(EVENTO_DANO_CLASS).getConstructors();
-        for (var i = 0; i < constructores.length; i++) {
-            var params = constructores[i].getParameterTypes();
-            if (params.length === 4 && String(params[3].getName()) === "double") {
-                var evento = constructores[i].newInstance(player, entidad, causa, cantidad);
-                server.getPluginManager().callEvent(evento);
-                return evento.isCancelled() ? -1 : evento.getDamage();
-            }
-        }
-        throw "no se encontr\u00f3 el constructor del evento de da\u00f1o";
+        var npcsRaid = cargador.loadClass(RAID_NPCS_CLASS);
+        var oleada = buscarMetodo(npcsRaid, "getWaveIdForNpc", ["int"]).invoke(null, enteroJava(entidad.getEntityId()));
+        if (oleada == null) return true;
+        var id = String(oleada);
+        var sesiones = cargador.loadClass(RAID_SESIONES_CLASS);
+        var sesion = buscarMetodo(sesiones, "getSessionById", ["java.lang.String"]).invoke(null, id.substring(0, id.lastIndexOf("_wave_")));
+        if (sesion == null) return false;
+        return sesion.getActivePlayers().contains(player.getUniqueId());
     } catch (e) {
-        api.error("[baculo_sagrado] No se pudo comprobar si el golpe est\u00e1 permitido: " + e);
-        return -1;
+        api.warn("[baculo_sagrado] No se pudo revisar el sistema de raids: " + e);
+        return true;
     }
 }
 
@@ -215,8 +220,7 @@ function barrido(danoPorNpc) {
             var entidad = cercanas.get(i);
             var npc = handleNpc(entidad);
             if (npc == null || !esEnemigo(npc, yo)) continue;
-            var permitido = danoPermitido(entidad, danoPorNpc);
-            if (permitido < 0) continue;
+            if (!permitidoPorRaids(entidad)) continue;
 
             var direccion = entidad.getLocation().toVector().subtract(centro.toVector()).setY(0);
             if (direccion.lengthSquared() < 0.01) direccion = mirada.clone().setY(0);
@@ -224,7 +228,7 @@ function barrido(danoPorNpc) {
 
             var empuje = direccion.normalize().multiply(CONFIG.FUERZA).setY(CONFIG.ALTURA);
             entidad.setVelocity(empuje);
-            if (permitido > 0) danar(entidad, npc, permitido, fuente);
+            danar(entidad, npc, danoPorNpc, fuente);
             golpeados++;
         }
     } finally {
