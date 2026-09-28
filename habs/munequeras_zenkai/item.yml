@@ -1,0 +1,51 @@
+# Pesas del Zenkai — definición del item
+#
+# NO subas este archivo tal cual: reemplazaría todos los items del servidor.
+# Camino recomendado: con las "Muñequeras y tobilleras pesadas" en la mano usa
+#   /ci create munequeras_zenkai
+# y luego edita el nombre y el lore con /ci rename y /ci setline. Así el material
+# y los datos del item los toma el servidor del item real.
+# Alternativa: con el servidor APAGADO, copia el bloque "munequeras_zenkai" dentro
+# de la sección "items:" de plugins/Debentialc/items/custom_items.yml, respetando
+# la sangría.
+#
+# material 4692 = Muñequeras y tobilleras pesadas de Dragon Block C en este servidor.
+# Los ids de items de mods los asigna cada servidor: si cambia, usa /ci create.
+#
+# La hab NO vive aquí: es el script habs/munequeras_zenkai/munequeras_zenkai.js
+# (script global de jugadores de CustomNPC+). Solo reconoce el item por su etiqueta
+# debentialc_id = munequeras_zenkai, que pone /ci give.
+#
+# OJO: /ci give crea un item NUEVO con esta definición. Si DBC guarda el valor del
+# peso en el NBT del item original, el item que entrega /ci give no lo trae.
+#
+# ownerOnly: false porque la hab es del item, no de una persona.
+# unbreakable: true para que no se gaste por llevarlo puesto.
+
+items:
+  munequeras_zenkai:
+    id: munequeras_zenkai
+    material: 4692
+    durabilityData: 0
+    displayName: '&6&lPesas del Zenkai'
+    lore:
+    - '&7Muñequeras y tobilleras que esconden un poder dormido.'
+    - ''
+    - '&ePasiva: &fQuitarse las pesas'
+    - '&7Con menos del &f10% &7de vida se caen las pesas:'
+    - '&7  • Recuperas &f15% &7de tu vida'
+    - '&7  • &f+25% &7de fuerza y destreza durante &f30 s'
+    - '&7  • Una onda empuja a los enemigos cercanos'
+    - '&8Debe estar equipado en el inventario DBC'
+    - '&8Enfriamiento: 10 minutos'
+    isActive: true
+    ownerOnly: false
+    consumable: false
+    unbreakable: true
+    maxDurability: -1
+    delaySeconds: 0
+    expirationSeconds: 0
+    commands: []
+    tpValue: 0
+    tpConsumeStack: false
+    attackDamage: -1
