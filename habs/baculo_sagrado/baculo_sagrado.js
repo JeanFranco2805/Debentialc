@@ -42,6 +42,11 @@ var CONFIG = {
 
 var TAGGING_CLASS = "org.debentialc.customitems.tools.nbt.CustomItemTagging";
 var NBT_CLASS = "org.debentialc.customitems.tools.nbt.NbtHandler";
+var FUENTE_NPC_CLASS = "noppes.npcs.NpcDamageSource";
+var FUENTE_SCRIPT_CLASS = "noppes.npcs.scripted.ScriptDamageSource";
+// Tipo de golpe propio: DBC recalcula los golpes de tipo "player" y los convierte en el
+// golpe completo del jugador; con otro tipo el porcentaje se respeta.
+var TIPO_DANO = "baculo_sagrado";
 var NPC_BASE_CLASS = "noppes.npcs.entity.EntityNPCInterface";
 var EVENTO_DANO = "EntityDamageByEntityEvent";
 
@@ -123,12 +128,52 @@ function registrarMedidor() {
     }, "MONITOR");
 }
 
+function construir(nombreClase, nParams, args) {
+    var clase = api.getClass().getClassLoader().loadClass(nombreClase);
+    var constructores = clase.getConstructors();
+    for (var i = 0; i < constructores.length; i++) {
+        if (constructores[i].getParameterTypes().length === nParams) {
+            return constructores[i].newInstance(args);
+        }
+    }
+    throw "no se encontr\u00f3 el constructor de " + nombreClase;
+}
+
+// Fuente de dano de CustomNPC con el dueno como atacante: asi el golpe cuenta como suyo
+// (misiones, raids, quien lo mato) y los NPCs lo aceptan aunque no estuvieran peleando.
+function fuenteDelDueno(yo) {
+    try {
+        var origen = construir(FUENTE_NPC_CLASS, 2, [TIPO_DANO, yo]);
+        return construir(FUENTE_SCRIPT_CLASS, 1, [origen]);
+    } catch (e) {
+        api.warn("[baculo_sagrado] No se pudo crear la fuente de da\u00f1o de CustomNPC: " + e);
+        return null;
+    }
+}
+
+function danar(entidad, npc, cantidad, fuente) {
+    var antes = entidad.getHealth();
+    var esperado = antes - cantidad;
+    var scriptNpc = npc.wrappedNPC;
+    if (fuente != null && scriptNpc != null) {
+        scriptNpc.hurt(cantidad, fuente);
+    } else {
+        entidad.damage(cantidad);
+    }
+    // Si algo (DBC) convirtio el golpe en uno mayor y el NPC sigue vivo, se le devuelve la
+    // vida de mas para que el dano sea exactamente el porcentaje.
+    if (esperado > 0 && !entidad.isDead() && entidad.getHealth() > 0 && entidad.getHealth() < esperado) {
+        entidad.setHealth(esperado);
+    }
+}
+
 function barrido(danoPorNpc) {
     var centro = player.getLocation();
     var mirada = centro.getDirection();
     var yo = player.getHandle();
     var cercanas = api.getNearbyEntities(centro, CONFIG.RADIO);
     var golpeados = 0;
+    var fuente = fuenteDelDueno(yo);
 
     api.setPlayerData(player, CONFIG.CLAVE_BARRIENDO, true);
     try {
@@ -143,9 +188,7 @@ function barrido(danoPorNpc) {
 
             var empuje = direccion.normalize().multiply(CONFIG.FUERZA).setY(CONFIG.ALTURA);
             entidad.setVelocity(empuje);
-            // Sin el jugador como fuente: DBC recalcula el dano de cualquier golpe que venga
-            // de un jugador y lo convierte en su golpe completo, ignorando el porcentaje.
-            if (danoPorNpc > 0) entidad.damage(danoPorNpc);
+            if (danoPorNpc > 0) danar(entidad, npc, danoPorNpc, fuente);
             golpeados++;
         }
     } finally {
