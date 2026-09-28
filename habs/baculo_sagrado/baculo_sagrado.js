@@ -34,6 +34,8 @@ var CONFIG = {
     ALTURA: 0.45,           // cuanto los levanta
     PORCENTAJE_DANO: 0.50,  // fraccion del ultimo golpe del dueno
     COOLDOWN_MS: 3000,      // evita que un solo clic gaste dos usos
+    AVISAR_USOS: 5,         // solo avisa los usos restantes cuando quedan estos o menos
+    MOSTRAR_DANO: false,    // true: muestra enemigos golpeados y dano de cada barrido
     CLAVE_COOLDOWN: "baculo_sagrado_cd",
     CLAVE_GOLPE: "baculo_sagrado_golpe",
     CLAVE_BARRIENDO: "baculo_sagrado_barriendo",
@@ -46,7 +48,7 @@ var FUENTE_NPC_CLASS = "noppes.npcs.NpcDamageSource";
 var FUENTE_SCRIPT_CLASS = "noppes.npcs.scripted.ScriptDamageSource";
 var RAID_NPCS_CLASS = "org.debentialc.raids.managers.NPCSpawnManager";
 var RAID_SESIONES_CLASS = "org.debentialc.raids.managers.RaidSessionManager";
-var VERSION = "2026-09-28 radio7-50";
+var VERSION = "2026-09-28 radio7-50-avisos";
 var EFECTO_CLASS = "org.bukkit.EntityEffect";
 var TIPO_DANO = "baculo_sagrado";
 var NPC_BASE_CLASS = "noppes.npcs.entity.EntityNPCInterface";
@@ -351,13 +353,18 @@ function main() {
     api.setPlayerData(player, CONFIG.CLAVE_COOLDOWN, ahora);
     usados++;
 
-    api.sendMessage(player, "&6B\u00e1culo Sagrado &7\u00bb &e" + golpeados + " &7enemigo(s), &c" + Math.round(danoPorNpc)
-            + " &7de da\u00f1o c/u &8(" + Math.round(CONFIG.PORCENTAJE_DANO * 100) + "% de tu golpe de " + Math.round(golpe) + ")");
+    if (CONFIG.MOSTRAR_DANO) {
+        api.sendMessage(player, "&6B\u00e1culo Sagrado &7\u00bb &e" + golpeados + " &7enemigo(s), &c" + Math.round(danoPorNpc)
+                + " &7de da\u00f1o c/u &8(" + Math.round(CONFIG.PORCENTAJE_DANO * 100) + "% de tu golpe de " + Math.round(golpe) + ")");
+    }
     if (usados >= CONFIG.USOS) {
         romper(nbt);
     } else {
         guardarUsos(nbt, usados, golpe);
-        api.sendMessage(player, "&7Usos restantes: &e" + (CONFIG.USOS - usados) + "&7/" + CONFIG.USOS);
+        var restantes = CONFIG.USOS - usados;
+        if (restantes <= CONFIG.AVISAR_USOS) {
+            api.sendMessage(player, "&6B\u00e1culo Sagrado &7\u00bb te " + (restantes === 1 ? "queda &e1 &7uso" : "quedan &e" + restantes + " &7usos"));
+        }
     }
     player.updateInventory();
 }
