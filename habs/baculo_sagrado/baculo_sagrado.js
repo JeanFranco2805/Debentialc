@@ -14,11 +14,11 @@
  *   - Barrido de 360 grados que empuja y dana a los NPCs de CustomNPCs cercanos cuya
  *     faccion sea agresiva o neutral con el dueno, esten peleando con el o no.
  *     Los amistosos no se tocan.
- *   - Dano por NPC: 20% del ultimo golpe cuerpo a cuerpo que el dueno le dio a un NPC.
+ *   - Dano por NPC: 40% del ultimo golpe cuerpo a cuerpo que el dueno le dio a un NPC.
  *     DBC no expone un "dano de melee" que se pueda leer, asi que se mide de los golpes
  *     reales (incluye forma, release, kaioken, items...). El ultimo golpe usado queda
  *     guardado en el baculo, asi que solo hay que pegarle a un NPC antes del primer uso.
- *   - 10 usos por baculo; al gastarlos se rompe. Un clic sin enemigos cerca no gasta uso.
+ *   - 15 usos por baculo; al gastarlos se rompe. Un clic sin enemigos cerca no gasta uso.
  *   - Solo responde a su dueno: el que recibio el item con /ci give (ownerOnly: true).
  *
  * Como guarda los usos: en el NBT del item (clave baculo_sagrado_usos), con el mismo
@@ -28,11 +28,11 @@
  */
 
 var CONFIG = {
-    USOS: 10,
+    USOS: 15,
     RADIO: 6,               // bloques alrededor del jugador
     FUERZA: 1.6,            // empuje horizontal
     ALTURA: 0.45,           // cuanto los levanta
-    PORCENTAJE_DANO: 0.20,  // fraccion del ultimo golpe del dueno
+    PORCENTAJE_DANO: 0.40,  // fraccion del ultimo golpe del dueno
     COOLDOWN_MS: 3000,      // evita que un solo clic gaste dos usos
     CLAVE_COOLDOWN: "baculo_sagrado_cd",
     CLAVE_GOLPE: "baculo_sagrado_golpe",
