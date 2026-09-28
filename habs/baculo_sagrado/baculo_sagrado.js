@@ -143,7 +143,9 @@ function barrido(danoPorNpc) {
 
             var empuje = direccion.normalize().multiply(CONFIG.FUERZA).setY(CONFIG.ALTURA);
             entidad.setVelocity(empuje);
-            if (danoPorNpc > 0) entidad.damage(danoPorNpc, player);
+            // Sin el jugador como fuente: DBC recalcula el dano de cualquier golpe que venga
+            // de un jugador y lo convierte en su golpe completo, ignorando el porcentaje.
+            if (danoPorNpc > 0) entidad.damage(danoPorNpc);
             golpeados++;
         }
     } finally {
