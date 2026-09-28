@@ -31,7 +31,7 @@
 // ============================================================
 
 var CONFIG = {
-    ID_ITEM: "munequeras_zenkai",   // el id que le pusiste con /ci create
+    IDS_ITEM: ["munequeras_zenkai", "guantelete_zenkai"],   // ids de /ci create que activan la hab
     UMBRAL: 0.10,                   // se activa con MENOS de este % de vida
     CURACION: 0.15,                 // % de la vida maxima que recupera
     BONUS: 1.25,                    // multiplicador de STR y DEX
@@ -111,7 +111,7 @@ function tienePuestas(dbc) {
         var pieza = dbc.getItem(ranura, false);
         if (pieza == null) continue;
         var tag = pieza.getNbt();
-        if (tag.has("debentialc_id") && String(tag.getString("debentialc_id")) === CONFIG.ID_ITEM) return true;
+        if (tag.has("debentialc_id") && CONFIG.IDS_ITEM.indexOf(String(tag.getString("debentialc_id"))) >= 0) return true;
     }
     return false;
 }
