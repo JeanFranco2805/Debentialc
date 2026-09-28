@@ -14,7 +14,7 @@
  *   - Barrido de 360 grados que empuja y dana a los NPCs de CustomNPCs cercanos cuya
  *     faccion sea agresiva o neutral con el dueno, esten peleando con el o no.
  *     Los amistosos no se tocan.
- *   - Dano por NPC: 40% del ultimo golpe cuerpo a cuerpo que el dueno le dio a un NPC.
+ *   - Dano por NPC: 50% del ultimo golpe cuerpo a cuerpo que el dueno le dio a un NPC.
  *     DBC no expone un "dano de melee" que se pueda leer, asi que se mide de los golpes
  *     reales (incluye forma, release, kaioken, items...). El ultimo golpe usado queda
  *     guardado en el baculo, asi que solo hay que pegarle a un NPC antes del primer uso.
@@ -29,10 +29,10 @@
 
 var CONFIG = {
     USOS: 15,
-    RADIO: 6,               // bloques alrededor del jugador
+    RADIO: 7,               // bloques alrededor del jugador
     FUERZA: 1.6,            // empuje horizontal
     ALTURA: 0.45,           // cuanto los levanta
-    PORCENTAJE_DANO: 0.40,  // fraccion del ultimo golpe del dueno
+    PORCENTAJE_DANO: 0.50,  // fraccion del ultimo golpe del dueno
     COOLDOWN_MS: 3000,      // evita que un solo clic gaste dos usos
     CLAVE_COOLDOWN: "baculo_sagrado_cd",
     CLAVE_GOLPE: "baculo_sagrado_golpe",
@@ -46,7 +46,7 @@ var FUENTE_NPC_CLASS = "noppes.npcs.NpcDamageSource";
 var FUENTE_SCRIPT_CLASS = "noppes.npcs.scripted.ScriptDamageSource";
 var RAID_NPCS_CLASS = "org.debentialc.raids.managers.NPCSpawnManager";
 var RAID_SESIONES_CLASS = "org.debentialc.raids.managers.RaidSessionManager";
-var VERSION = "2026-09-28 dano-directo-2";
+var VERSION = "2026-09-28 radio7-50";
 var EFECTO_CLASS = "org.bukkit.EntityEffect";
 var TIPO_DANO = "baculo_sagrado";
 var NPC_BASE_CLASS = "noppes.npcs.entity.EntityNPCInterface";
