@@ -1,0 +1,36 @@
+# Báculo Sagrado — definición del item
+#
+# NO subas este archivo tal cual: reemplazaría todos los items del servidor.
+# Con el servidor APAGADO, copia el bloque "baculo_sagrado" dentro de la sección
+# "items:" de plugins/Debentialc/items/custom_items.yml, respetando la sangría.
+#
+# material 4478 = Bastón Mágico de Dragon Block C en este servidor. Los ids de items
+# de mods los asigna cada servidor: si cambia, crea el item en el juego con /ci create.
+# unbreakable: true evita que el bastón se gaste al pegar (no afecta a los usos,
+# que el script guarda en el NBT del item).
+# ownerOnly: true hace que /ci give le ponga dueño al que lo recibe.
+
+items:
+  baculo_sagrado:
+    id: baculo_sagrado
+    material: 4478
+    durabilityData: 0
+    displayName: '&6&lBáculo Sagrado'
+    lore:
+    - '&7El bastón mágico que se estira hasta el cielo.'
+    - ''
+    - '&eClic derecho: &fbarrido contra los enemigos cercanos'
+    - '&7Daño: &f20% de tu golpe'
+    - '&7Usos: &f10 &8(se rompe al gastarlos)'
+    - '&8Solo responde a su dueño'
+    isActive: true
+    ownerOnly: true
+    consumable: false
+    unbreakable: true
+    maxDurability: -1
+    delaySeconds: 0
+    expirationSeconds: 0
+    commands: []
+    tpValue: 0
+    tpConsumeStack: false
+    attackDamage: -1
