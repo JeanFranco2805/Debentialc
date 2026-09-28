@@ -44,8 +44,9 @@ var TAGGING_CLASS = "org.debentialc.customitems.tools.nbt.CustomItemTagging";
 var NBT_CLASS = "org.debentialc.customitems.tools.nbt.NbtHandler";
 var FUENTE_NPC_CLASS = "noppes.npcs.NpcDamageSource";
 var FUENTE_SCRIPT_CLASS = "noppes.npcs.scripted.ScriptDamageSource";
-// Tipo de golpe propio: DBC recalcula los golpes de tipo "player" y los convierte en el
-// golpe completo del jugador; con otro tipo el porcentaje se respeta.
+var EVENTO_DANO_CLASS = "org.bukkit.event.entity.EntityDamageByEntityEvent";
+var CAUSA_DANO_CLASS = "org.bukkit.event.entity.EntityDamageEvent$DamageCause";
+var EFECTO_CLASS = "org.bukkit.EntityEffect";
 var TIPO_DANO = "baculo_sagrado";
 var NPC_BASE_CLASS = "noppes.npcs.entity.EntityNPCInterface";
 var EVENTO_DANO = "EntityDamageByEntityEvent";
@@ -139,8 +140,8 @@ function construir(nombreClase, nParams, args) {
     throw "no se encontr\u00f3 el constructor de " + nombreClase;
 }
 
-// Fuente de dano de CustomNPC con el dueno como atacante: asi el golpe cuenta como suyo
-// (misiones, raids, quien lo mato) y los NPCs lo aceptan aunque no estuvieran peleando.
+// Fuente de dano de CustomNPC con el dueno como atacante, para el golpe que mata: asi la
+// muerte cuenta como suya (misiones, drops, quien lo mato).
 function fuenteDelDueno(yo) {
     try {
         var origen = construir(FUENTE_NPC_CLASS, 2, [TIPO_DANO, yo]);
@@ -151,19 +152,52 @@ function fuenteDelDueno(yo) {
     }
 }
 
+// Pregunta a los plugins (raids, WorldGuard...) si el dueno puede danar a este NPC, con el
+// mismo evento que genera un golpe normal. Devuelve el dano permitido o -1 si lo cancelan.
+function danoPermitido(entidad, cantidad) {
+    try {
+        var cargador = api.getClass().getClassLoader();
+        var causa = cargador.loadClass(CAUSA_DANO_CLASS).getField("ENTITY_ATTACK").get(null);
+        var constructores = cargador.loadClass(EVENTO_DANO_CLASS).getConstructors();
+        for (var i = 0; i < constructores.length; i++) {
+            var params = constructores[i].getParameterTypes();
+            if (params.length === 4 && String(params[3].getName()) === "double") {
+                var evento = constructores[i].newInstance(player, entidad, causa, cantidad);
+                server.getPluginManager().callEvent(evento);
+                return evento.isCancelled() ? -1 : evento.getDamage();
+            }
+        }
+        throw "no se encontr\u00f3 el constructor del evento de da\u00f1o";
+    } catch (e) {
+        api.error("[baculo_sagrado] No se pudo comprobar si el golpe est\u00e1 permitido: " + e);
+        return -1;
+    }
+}
+
+function efectoGolpe(entidad) {
+    try {
+        var efecto = api.getClass().getClassLoader().loadClass(EFECTO_CLASS).getField("HURT").get(null);
+        entidad.playEffect(efecto);
+    } catch (e) {
+        // Solo visual
+    }
+}
+
+// DBC convierte cualquier golpe que venga del dueno en su golpe completo y el dano sin
+// atacante lo bloquea el servidor, asi que un golpe no letal se resta directo de la vida.
+// El que mata se hace con la fuente del dueno para que la muerte cuente como suya.
 function danar(entidad, npc, cantidad, fuente) {
-    var antes = entidad.getHealth();
-    var esperado = antes - cantidad;
+    var vida = entidad.getHealth();
+    if (cantidad < vida) {
+        entidad.setHealth(vida - cantidad);
+        efectoGolpe(entidad);
+        return;
+    }
     var scriptNpc = npc.wrappedNPC;
     if (fuente != null && scriptNpc != null) {
         scriptNpc.hurt(cantidad, fuente);
     } else {
         entidad.damage(cantidad);
-    }
-    // Si algo (DBC) convirtio el golpe en uno mayor y el NPC sigue vivo, se le devuelve la
-    // vida de mas para que el dano sea exactamente el porcentaje.
-    if (esperado > 0 && !entidad.isDead() && entidad.getHealth() > 0 && entidad.getHealth() < esperado) {
-        entidad.setHealth(esperado);
     }
 }
 
@@ -181,6 +215,8 @@ function barrido(danoPorNpc) {
             var entidad = cercanas.get(i);
             var npc = handleNpc(entidad);
             if (npc == null || !esEnemigo(npc, yo)) continue;
+            var permitido = danoPermitido(entidad, danoPorNpc);
+            if (permitido < 0) continue;
 
             var direccion = entidad.getLocation().toVector().subtract(centro.toVector()).setY(0);
             if (direccion.lengthSquared() < 0.01) direccion = mirada.clone().setY(0);
@@ -188,7 +224,7 @@ function barrido(danoPorNpc) {
 
             var empuje = direccion.normalize().multiply(CONFIG.FUERZA).setY(CONFIG.ALTURA);
             entidad.setVelocity(empuje);
-            if (danoPorNpc > 0) danar(entidad, npc, danoPorNpc, fuente);
+            if (permitido > 0) danar(entidad, npc, permitido, fuente);
             golpeados++;
         }
     } finally {
