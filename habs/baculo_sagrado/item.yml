@@ -20,7 +20,7 @@ items:
     - '&7El bastón mágico que se estira hasta el cielo.'
     - ''
     - '&eClic derecho: &fbarrido contra los enemigos cercanos'
-    - '&7Daño: &f50% de tu golpe'
+    - '&7Daño: &f30% de tu golpe'
     - '&7Usos: &f15 &8(se rompe al gastarlos)'
     - '&8Solo responde a su dueño'
     isActive: true
