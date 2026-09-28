@@ -1,0 +1,48 @@
+# Estandarte de Raid — definición del item
+#
+# NO subas este archivo tal cual: reemplazaría todos los items del servidor.
+# Camino recomendado: con el item que quieras usar en la mano (cualquiera sin acción
+# propia al clic derecho: nada que se coma, se coloque o se dispare) usa
+#   /ci create estandarte_raid
+# y luego /ci rename y /ci setline para el nombre y el lore. Así el material lo toma
+# el servidor del item real.
+# Alternativa: con el servidor APAGADO, copia el bloque "estandarte_raid" dentro de la
+# sección "items:" de plugins/Debentialc/items/custom_items.yml, respetando la sangría.
+#
+# material 399 = Estrella del Nether, solo como ejemplo. Cámbialo por el item que
+# prefieras (por ejemplo uno de Dragon Block C).
+#
+# El script va en plugins/Debentialc/scripts/estandarte_raid.js (el nombre del archivo
+# tiene que ser igual al id del item) o desde /cimenu > item > Opciones Avanzadas > Scripts.
+#
+# ownerOnly: false: el estandarte lo usa quien lo tenga en la mano, es un item de grupo.
+# unbreakable: true para que no se gaste por usarlo (los usos los cuenta el script).
+# Los números del lore (radio, 20%, 30%, 3 usos, 30 s) salen del CONFIG del script:
+# si los cambias allí, cámbialos aquí también.
+
+items:
+  estandarte_raid:
+    id: estandarte_raid
+    material: 399
+    durabilityData: 0
+    displayName: '&6&lEstandarte de Raid'
+    lore:
+    - '&7Da valor a quien lucha a tu lado.'
+    - ''
+    - '&eClic derecho: &frestaura a tus compañeros de raid'
+    - '&7Radio: &f15 bloques'
+    - '&7Restaura: &f20% de vida &7y &f30% de ki'
+    - '&7Solo funciona durante una raid'
+    - '&7Usos: &f3 &8(se rompe al gastarlos)'
+    - '&8Enfriamiento compartido en la raid: 30 s'
+    isActive: true
+    ownerOnly: false
+    consumable: false
+    unbreakable: true
+    maxDurability: -1
+    delaySeconds: 0
+    expirationSeconds: 0
+    commands: []
+    tpValue: 0
+    tpConsumeStack: false
+    attackDamage: -1
