@@ -1,25 +1,27 @@
-# Esfera Genki — definición del item (id interno: estandarte_raid)
+# Chispa Genki — definición del item (id interno: estandarte_raid)
 #
 # El id NO cambia aunque el nombre visible sea otro: el script se enlaza con el item por
 # el id (el archivo tiene que llamarse estandarte_raid.js).
 #
 # NO subas este archivo tal cual: reemplazaría todos los items del servidor.
-# Camino recomendado: con una Estrella del Nether (o el item que prefieras, siempre que
-# no tenga acción propia al clic derecho: nada que se coma, se coloque o se dispare) en la
-# mano usa
+# Camino recomendado: con el Hechizo Sagrado (#4146, pestaña "Misceláneo de CustomNpcs")
+# en la mano usa
 #   /ci create estandarte_raid
-#   /ci rename &b&lEsfera Genki
+#   /ci rename &b&lChispa Genki
 # y luego /ci setline para el lore. Así el material lo toma el servidor del item real.
 # Alternativa: con el servidor APAGADO, copia el bloque "estandarte_raid" dentro de la
 # sección "items:" de plugins/Debentialc/items/custom_items.yml, respetando la sangría.
 #
-# material 399 = Estrella del Nether: una esfera blanca y brillante, como la de la
-# Genkidama. Cámbialo si prefieres otro item.
+# material 4146 = Hechizo Sagrado de CustomNPC+: una estrella blanca y brillante, una
+# chispa de energía. Es un item común de CustomNPC+ sin acción propia al clic derecho
+# (no se come, no se coloca, no se dispara), así que no choca con el script. Los ids de
+# items de mod los asigna cada servidor: si cambia, usa /ci create con el item en la mano.
+# Si lo cambias por otro item, que tampoco tenga acción propia al clic derecho.
 #
 # El script va en plugins/Debentialc/scripts/estandarte_raid.js o desde
 # /cimenu > item > Opciones Avanzadas > Scripts.
 #
-# ownerOnly: false: la esfera la usa quien la tenga en la mano, es un item de grupo.
+# ownerOnly: false: la chispa la usa quien la tenga en la mano, es un item de grupo.
 # unbreakable: true para que no se gaste por usarla (los usos los cuenta el script).
 # Los números del lore (radio, 20%, 30%, 3 usos, 30 s) salen del CONFIG del script:
 # si los cambias allí, cámbialos aquí también.
@@ -27,9 +29,9 @@
 items:
   estandarte_raid:
     id: estandarte_raid
-    material: 399
+    material: 4146
     durabilityData: 0
-    displayName: '&b&lEsfera Genki'
+    displayName: '&b&lChispa Genki'
     lore:
     - '&7Energía prestada por todos los que luchan a tu lado.'
     - ''

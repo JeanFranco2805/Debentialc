@@ -1,5 +1,5 @@
 /*
- * Esfera Genki - hab de item para Debentialc (id interno: estandarte_raid)
+ * Chispa Genki - hab de item para Debentialc (id interno: estandarte_raid)
  *
  * Donde va: plugins/Debentialc/scripts/estandarte_raid.js
  *           (el nombre del archivo tiene que ser igual al id del item)
@@ -16,9 +16,9 @@
  *   - No revive: a quien esta derribado (vida 0) no se le toca, y quien murio en la raid
  *     ya no cuenta como participante. Tampoco cura a nadie que este fuera de la raid.
  *   - Si nadie del radio necesita nada (todos con vida y ki completos), no gasta uso.
- *   - 3 usos por esfera; al gastarlos se apaga.
+ *   - 3 usos por chispa; al gastarlos se apaga.
  *   - Enfriamiento COMPARTIDO: despues de un uso, nadie de esa raid puede usar otra
- *     esfera durante 30 s. Sin esto, varias esferas se encadenarian.
+ *     chispa durante 30 s. Sin esto, varias chispas se encadenarian.
  *
  * Los porcentajes, el radio, los usos y el enfriamiento salen de CONFIG. Afectan al
  * equilibrio de las raids: conviene que los apruebe quien las disena.
@@ -70,7 +70,7 @@ function numero(valor) {
     return valor == null ? null : Number(String(valor));
 }
 
-// Sesion de raid activa de quien usa la esfera, o null si no esta en una raid viva.
+// Sesion de raid activa de quien usa la chispa, o null si no esta en una raid viva.
 // Lanza una excepcion si no se puede consultar el sistema de raids: ese caso NO debe
 // tratarse como "no hay raid" para que el fallo se vea.
 function sesionDeRaid() {
@@ -158,7 +158,7 @@ function anunciar(beneficiarios) {
         if (falta.cambiaVida) partes.push("&a+" + pctVida + "% vida");
         if (falta.cambiaKi) partes.push("&b+" + pctKi + "% ki");
         var propio = String(jugador.getName()) === String(player.getName());
-        var quien = propio ? "Compartiste la Esfera Genki" : "&f" + player.getName() + " &7comparti\u00f3 su Esfera Genki";
+        var quien = propio ? "Compartiste la Chispa Genki" : "&f" + player.getName() + " &7comparti\u00f3 su Chispa Genki";
         api.sendMessage(jugador, "&a\u2726 &7" + quien + ": " + partes.join(" &7y "));
         api.playSound(jugador, "LEVEL_UP", 1.0, 1.4);
     }
@@ -193,7 +193,7 @@ function reemplazarDespues(nuevo) {
     server.getScheduler().runTaskLater(plugin, function () {
         var actual = inventario.getItem(slot);
         if (actual == null || actual.getTypeId() !== tipo) {
-            api.warn("[estandarte_raid] " + player.getName() + " movio la esfera antes de guardar los usos");
+            api.warn("[estandarte_raid] " + player.getName() + " movio la chispa antes de guardar los usos");
             return;
         }
         inventario.setItem(slot, nuevo);
@@ -216,7 +216,7 @@ function romper(nbt) {
         reemplazarDespues(null);
     }
     api.playSound(player, "ITEM_BREAK", 1.0, 1.0);
-    api.sendMessage(player, "&c\u2726 La Esfera Genki se apag\u00f3 tras " + CONFIG.USOS + " usos.");
+    api.sendMessage(player, "&c\u2726 La Chispa Genki se apag\u00f3 tras " + CONFIG.USOS + " usos.");
 }
 
 // El plugin solo ejecuta el script con un item en la mano, asi que no hace falta
@@ -226,12 +226,12 @@ function main() {
     try {
         sesion = sesionDeRaid();
     } catch (e) {
-        api.error("[estandarte_raid] No se pudo consultar el sistema de raids; esfera bloqueada: " + e);
-        api.sendMessage(player, "&c\u2717 La esfera fall\u00f3. Avisa a un admin.");
+        api.error("[estandarte_raid] No se pudo consultar el sistema de raids; chispa bloqueada: " + e);
+        api.sendMessage(player, "&c\u2717 La chispa fall\u00f3. Avisa a un admin.");
         return;
     }
     if (sesion == null) {
-        api.sendMessage(player, "&7La esfera solo funciona durante una raid. &8(no se gast\u00f3 ning\u00fan uso)");
+        api.sendMessage(player, "&7La chispa solo funciona durante una raid. &8(no se gast\u00f3 ning\u00fan uso)");
         return;
     }
 
@@ -240,7 +240,7 @@ function main() {
     if (ultimoUso != null) {
         var restante = CONFIG.COOLDOWN_MS - (ahora - ultimoUso);
         if (restante > 0) {
-            api.sendMessage(player, "&7La esfera se est\u00e1 recuperando: &e" + Math.ceil(restante / 1000) + "s");
+            api.sendMessage(player, "&7La chispa se est\u00e1 recuperando: &e" + Math.ceil(restante / 1000) + "s");
             return;
         }
     }
@@ -249,8 +249,8 @@ function main() {
     try {
         nbt = nbtDe(item);
     } catch (e2) {
-        api.error("[estandarte_raid] No se pudo leer el NBT del item; esfera bloqueada: " + e2);
-        api.sendMessage(player, "&c\u2717 La esfera fall\u00f3. Avisa a un admin.");
+        api.error("[estandarte_raid] No se pudo leer el NBT del item; chispa bloqueada: " + e2);
+        api.sendMessage(player, "&c\u2717 La chispa fall\u00f3. Avisa a un admin.");
         return;
     }
     var usados = leerUsos(nbt);
@@ -264,7 +264,7 @@ function main() {
         lista = beneficiarios(sesion);
     } catch (e3) {
         api.error("[estandarte_raid] Error buscando a los participantes: " + e3);
-        api.sendMessage(player, "&c\u2717 La esfera fall\u00f3. Avisa a un admin.");
+        api.sendMessage(player, "&c\u2717 La chispa fall\u00f3. Avisa a un admin.");
         return;
     }
     if (lista.length === 0) {
@@ -290,7 +290,7 @@ function main() {
         guardarUsos(nbt, usados);
         var restantes = CONFIG.USOS - usados;
         if (restantes <= CONFIG.AVISAR_USOS) {
-            api.sendMessage(player, "&6Esfera Genki &7\u00bb te " + (restantes === 1 ? "queda &e1 &7uso" : "quedan &e" + restantes + " &7usos"));
+            api.sendMessage(player, "&6Chispa Genki &7\u00bb te " + (restantes === 1 ? "queda &e1 &7uso" : "quedan &e" + restantes + " &7usos"));
         }
     }
     player.updateInventory();
